@@ -1,0 +1,27 @@
+.git
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# Ambientes virtuais e caches
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Segredos e banco local
+.env
+*.sqlite3
+db.sqlite3
+
+# Artefatos
+staticfiles/
+media/
+*.log
+
+# Documentação e prompts
+*.md
+prompt-*.md

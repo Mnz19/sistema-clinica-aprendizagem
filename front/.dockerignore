@@ -1,0 +1,19 @@
+.git
+.gitignore
+.dockerignore
+Dockerfile
+
+# Dependências e artefatos (o build acontece dentro da imagem)
+node_modules
+dist
+dist-ssr
+
+# Ambiente e caches locais
+.env
+.env.*
+!.env.example
+*.local
+*.log
+.vscode
+.idea
+.DS_Store

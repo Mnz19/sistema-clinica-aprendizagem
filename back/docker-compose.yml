@@ -1,0 +1,40 @@
+# docker-compose apenas para a APLICAÇÃO.
+# Em desenvolvimento o banco é SQLite (arquivo local), portanto não há container
+# de banco aqui. Para usar PostgreSQL, defina DATABASE_URL no .env apontando para
+# uma instância externa (o serviço "db" abaixo fica comentado como referência).
+services:
+  web:
+    build: .
+    # Em dev, sobrescreve o CMD de produção para usar o runserver com autoreload.
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+    environment:
+      # Em dev usamos o settings com SQLite. Sem DATABASE_URL → arquivo local.
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Monta o código para desenvolvimento com reload e persiste o SQLite no host.
+      - .:/app
+
+  # --- PostgreSQL (opcional / produção) -------------------------------------
+  # Descomente para rodar um Postgres local e defina no .env:
+  #   DJANGO_SETTINGS_MODULE=config.settings.prod
+  #   DATABASE_URL=postgres://erp:erp@db:5432/erp
+  #
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_DB: erp
+  #     POSTGRES_USER: erp
+  #     POSTGRES_PASSWORD: erp
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #
+  # volumes:
+  #   pgdata:

@@ -1,0 +1,8 @@
+"""Configuração do app de notificações por WhatsApp."""
+from django.apps import AppConfig
+
+
+class WhatsappConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.whatsapp"
+    verbose_name = "WhatsApp (confirmações)"
