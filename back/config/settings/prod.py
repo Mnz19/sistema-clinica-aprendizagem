@@ -25,12 +25,12 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 X_FRAME_OPTIONS = "DENY"
 
 # Em produção, versiona os estáticos com hash (cache busting) — exige collectstatic.
-STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
+# Só sobrescrevemos o backend de ESTÁTICOS: o de "default" (mídias) vem do base e
+# pode ser o disco local OU o S3 (quando USE_S3=True). Redefinir o dict inteiro
+# aqui apagaria a escolha do S3 feita no base.
+STORAGES["staticfiles"]["BACKEND"] = (
+    "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
 
 # E-mail real deve ser configurado por variáveis de ambiente (SMTP).
 EMAIL_BACKEND = env(

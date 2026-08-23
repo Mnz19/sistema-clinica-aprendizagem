@@ -16,3 +16,7 @@ gunicorn==23.0.0
 Pillow==11.1.0
 # Driver PostgreSQL — usado apenas em produção (em dev o banco é SQLite).
 psycopg[binary]==3.2.9
+# Armazenamento de mídias no Amazon S3 (bucket PRIVADO + URLs assinadas).
+# Ativado só quando USE_S3=True; em dev o storage continua sendo o disco local.
+# O extra [s3] já traz o boto3.
+django-storages[s3]==1.14.4

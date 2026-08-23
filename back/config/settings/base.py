@@ -161,6 +161,46 @@ STORAGES = {
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# --- Mídias no Amazon S3 (opcional) ------------------------------------------
+# Por padrão (USE_S3=False) as mídias vão para o disco local (MEDIA_ROOT) — ideal
+# em dev. Com USE_S3=True, o storage "default" passa a ser o Amazon S3.
+#
+# IMPORTANTE (LGPD): os arquivos são clínicos e infantojuvenis. O bucket DEVE ser
+# PRIVADO. Mantemos AWS_QUERYSTRING_AUTH=True, então cada `.url` gera uma URL
+# ASSINADA e temporária (presigned) — ninguém acessa o objeto sem passar pela API.
+# Os serializers já usam `obj.arquivo.url` / `obj.foto.url`, então nada muda no
+# código de serving: com S3 privado eles passam a devolver a URL assinada.
+USE_S3 = env.bool("USE_S3", default=False)
+if USE_S3:
+    AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+    AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="sa-east-1")
+    # Credenciais: em EC2/ECS o ideal é usar IAM Role (deixe em branco e o boto3
+    # descobre sozinho). Fora da AWS, informe as chaves do usuário IAM.
+    AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default=None)
+    AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default=None)
+
+    # Bucket privado + URLs assinadas (não deixe público!).
+    AWS_DEFAULT_ACL = None          # herda a policy do bucket (bucket owner enforced)
+    AWS_QUERYSTRING_AUTH = True     # gera URL assinada em cada `.url`
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+    AWS_QUERYSTRING_EXPIRE = env.int(
+        "AWS_QUERYSTRING_EXPIRE", default=3600
+    )  # validade da URL assinada, em segundos (1h)
+    AWS_S3_FILE_OVERWRITE = False   # nunca sobrescreve; anexa sufixo se colidir
+    AWS_S3_ADDRESSING_STYLE = "virtual"
+    # Domínio customizado opcional (ex.: CloudFront). Deixe em branco para usar o
+    # endpoint padrão do S3.
+    _s3_domain = env("AWS_S3_CUSTOM_DOMAIN", default="")
+    if _s3_domain:
+        AWS_S3_CUSTOM_DOMAIN = _s3_domain
+
+    STORAGES = {
+        "default": {"BACKEND": "storages.backends.s3.S3Storage"},
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+    }
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- Django REST Framework ---------------------------------------------------
