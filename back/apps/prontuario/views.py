@@ -106,8 +106,8 @@ class ItemProntuarioViewSet(viewsets.ModelViewSet):
     ordering = ["ordem", "nome"]
 
     def perform_destroy(self, instance):
-        # Itens fixos não são apagados; apenas ocultados.
-        if instance.tipo_item == TipoItem.FIXO:
+        # Itens fixos do sistema não são apagados; apenas ocultados.
+        if instance.chave_fixa:
             instance.visivel = False
             instance.save(update_fields=["visivel"])
             return
@@ -128,12 +128,13 @@ class ItemProntuarioViewSet(viewsets.ModelViewSet):
             ItemProntuario(
                 profissional_id=prof_id,
                 nome=nome,
-                tipo_item=TipoItem.FIXO,
+                tipo_item=tipo,
                 chave_fixa=chave,
                 visivel=visivel,
                 ordem=ordem,
+                formulario_schema=copy.deepcopy(schema),
             )
-            for ordem, (chave, nome, visivel) in enumerate(ITENS_FIXOS)
+            for ordem, (chave, nome, tipo, visivel, schema) in enumerate(ITENS_FIXOS)
             if chave not in existentes
         ]
         ItemProntuario.objects.bulk_create(novos)

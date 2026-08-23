@@ -25,61 +25,11 @@ def _campo(cid, tipo, rotulo, ordem, *, obrigatorio=False, opcoes=None):
     }
 
 
-# Itens personalizados iguais à referência (nome, tipo, schema).
-ITENS_PERSONALIZADOS = [
-    ("ATUALIZAÇÕES", TipoItem.TEXTO_LIVRE, []),
-    ("ANAMNESE", TipoItem.TEXTO_LIVRE, []),
-    (
-        "EVOLUÇÃO",
-        TipoItem.FORMULARIO,
-        [
-            _campo("data", "DATA", "Data da sessão", 0, obrigatorio=True),
-            _campo("objetivos", "TEXTO_LONGO", "Objetivos trabalhados", 1),
-            _campo("atividades", "TEXTO_LONGO", "Atividades realizadas", 2),
-            _campo(
-                "desempenho", "SELECAO_UNICA", "Desempenho", 3,
-                opcoes=["Acima do esperado", "Esperado", "Abaixo do esperado"],
-            ),
-            _campo("observacoes", "TEXTO_LONGO", "Observações", 4),
-        ],
-    ),
-    ("REFLEXÕES DO TERAPEUTA", TipoItem.TEXTO_LIVRE, []),
-    (
-        "VISITA ESCOLAR",
-        TipoItem.FORMULARIO,
-        [
-            _campo("escola", "TEXTO_CURTO", "Escola", 0),
-            _campo("data", "DATA", "Data da visita", 1),
-            _campo("profissional_escola", "TEXTO_CURTO", "Profissional contatado", 2),
-            _campo("observacoes", "TEXTO_LONGO", "Observações da visita", 3),
-            _campo("encaminhamentos", "TEXTO_LONGO", "Encaminhamentos", 4),
-        ],
-    ),
-    (
-        "ENCERRAMENTO",
-        TipoItem.FORMULARIO,
-        [
-            _campo("data", "DATA", "Data do encerramento", 0, obrigatorio=True),
-            _campo(
-                "motivo", "SELECAO_UNICA", "Motivo", 1,
-                opcoes=["Alta", "Transferência", "Desistência", "Outro"],
-            ),
-            _campo("sintese", "TEXTO_LONGO", "Síntese do acompanhamento", 2),
-            _campo("encaminhamentos", "TEXTO_LONGO", "Encaminhamentos", 3),
-        ],
-    ),
-    (
-        "PLANO DE ATENDIMENTO",
-        TipoItem.FORMULARIO,
-        [
-            _campo("objetivos_gerais", "TEXTO_LONGO", "Objetivos gerais", 0, obrigatorio=True),
-            _campo("objetivos_especificos", "TEXTO_LONGO", "Objetivos específicos", 1),
-            _campo("frequencia", "TEXTO_CURTO", "Frequência", 2),
-            _campo("estrategias", "TEXTO_LONGO", "Estratégias / abordagem", 3),
-            _campo("reavaliacao", "DATA", "Previsão de reavaliação", 4),
-        ],
-    ),
-]
+# As atividades da clínica (Anamnese, Plano de atendimento, Evolução, Visita
+# escolar, Reflexões do terapeuta, Encerramento, Atualizações) agora são itens
+# FIXOS do sistema (ver ``ITENS_FIXOS`` em apps.prontuario.models), então não são
+# recriadas aqui como personalizadas. Adicione abaixo apenas itens extra de demo.
+ITENS_PERSONALIZADOS = []
 
 
 class Command(BaseCommand):
@@ -103,15 +53,16 @@ class Command(BaseCommand):
             .exclude(chave_fixa="")
             .values_list("chave_fixa", flat=True)
         )
-        for ordem, (chave, nome, visivel) in enumerate(ITENS_FIXOS):
+        for ordem, (chave, nome, tipo, visivel, schema) in enumerate(ITENS_FIXOS):
             if chave not in existentes_fixos:
                 ItemProntuario.objects.create(
                     profissional=prof,
                     nome=nome,
-                    tipo_item=TipoItem.FIXO,
+                    tipo_item=tipo,
                     chave_fixa=chave,
                     visivel=visivel,
                     ordem=ordem,
+                    formulario_schema=list(schema),
                 )
                 fixos_criados += 1
 

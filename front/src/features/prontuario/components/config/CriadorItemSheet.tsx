@@ -38,8 +38,9 @@ export function CriadorItemSheet({ aberto, profissionalId, item, onFechar, onSal
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
-  // Itens fixos: só editam nome (o tipo/estrutura não muda).
-  const ehFixo = item?.tipo_item === "FIXO"
+  // Itens fixos do sistema: nome e tipo são travados. Se for FORMULARIO (ex.:
+  // Anamnese), as perguntas continuam editáveis; se for texto/seção, só o nome.
+  const ehSistema = Boolean(item?.chave_fixa)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -48,7 +49,7 @@ export function CriadorItemSheet({ aberto, profissionalId, item, onFechar, onSal
       setErro("Informe o nome do item.")
       return
     }
-    if (!ehFixo && tipo === "FORMULARIO" && campos.length === 0) {
+    if (tipo === "FORMULARIO" && campos.length === 0) {
       setErro("Adicione ao menos um campo ao formulário.")
       return
     }
@@ -56,8 +57,11 @@ export function CriadorItemSheet({ aberto, profissionalId, item, onFechar, onSal
     try {
       if (item) {
         await atualizarItem(item.id, {
-          nome,
-          ...(ehFixo ? {} : { tipo_item: tipo, formulario_schema: tipo === "FORMULARIO" ? campos : [] }),
+          ...(ehSistema
+            ? tipo === "FORMULARIO"
+              ? { formulario_schema: campos }
+              : {}
+            : { nome, tipo_item: tipo, formulario_schema: tipo === "FORMULARIO" ? campos : [] }),
         })
       } else {
         await criarItem({
@@ -99,10 +103,20 @@ export function CriadorItemSheet({ aberto, profissionalId, item, onFechar, onSal
 
             <div className="space-y-1.5">
               <Label>Nome do item</Label>
-              <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Evolução, Anamnese…" />
+              <Input
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Ex.: Evolução, Anamnese…"
+                disabled={ehSistema}
+              />
+              {ehSistema && (
+                <p className="text-xs text-muted-foreground">
+                  Item fixo do sistema: o nome não pode ser alterado.
+                </p>
+              )}
             </div>
 
-            {!ehFixo && (
+            {!ehSistema && (
               <div className="space-y-2">
                 <Label>Tipo de preenchimento</Label>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -138,9 +152,9 @@ export function CriadorItemSheet({ aberto, profissionalId, item, onFechar, onSal
               </div>
             )}
 
-            {!ehFixo && tipo === "FORMULARIO" && (
+            {tipo === "FORMULARIO" && (
               <div className="space-y-2">
-                <Label>Campos do formulário</Label>
+                <Label>{ehSistema ? "Perguntas da anamnese" : "Campos do formulário"}</Label>
                 <FormBuilder campos={campos} onChange={setCampos} />
               </div>
             )}

@@ -59,20 +59,47 @@ class TipoCampo(models.TextChoices):
 TIPOS_CAMPO_COM_OPCOES = {TipoCampo.SELECAO_UNICA, TipoCampo.MULTIPLA_ESCOLHA}
 
 
-# Catálogo de itens fixos do sistema: (chave, nome, visível por padrão).
-# São provisionados por profissional e controlados apenas pelo toggle ``visivel``.
+def _campo_anamnese(cid, tipo, rotulo, ordem, *, obrigatorio=False, opcoes=None):
+    """Atalho para montar um campo do schema seed da Anamnese."""
+    return {
+        "id": cid,
+        "tipo": tipo,
+        "rotulo": rotulo,
+        "ordem": ordem,
+        "obrigatorio": obrigatorio,
+        "opcoes": opcoes or [],
+    }
+
+
+# Schema padrão (seed) da Anamnese, voltado a fonoaudiologia — TEA nível 1 e
+# dificuldades de aprendizagem. 10 perguntas essenciais como ponto de partida:
+# cada profissional pode editar/adicionar/remover perguntas depois.
+ANAMNESE_SCHEMA_PADRAO = [
+    _campo_anamnese("data_anamnese", TipoCampo.DATA, "Data da anamnese", 0, obrigatorio=True),
+    _campo_anamnese("informante", TipoCampo.TEXTO_CURTO, "Informante (nome e parentesco)", 1),
+    _campo_anamnese("queixa_principal", TipoCampo.TEXTO_LONGO, "Queixa principal", 2, obrigatorio=True),
+    _campo_anamnese("desenvolvimento_linguagem", TipoCampo.TEXTO_LONGO, "Desenvolvimento da linguagem (primeiras palavras/frases)", 3),
+    _campo_anamnese("diagnosticos", TipoCampo.TEXTO_LONGO, "Diagnósticos / laudos prévios", 4),
+    _campo_anamnese("terapias", TipoCampo.TEXTO_LONGO, "Terapias em andamento (fono, TO, psico, etc.)", 5),
+    _campo_anamnese("interacao_social", TipoCampo.TEXTO_LONGO, "Interação social e comunicação", 6),
+    _campo_anamnese("aspectos_sensoriais", TipoCampo.TEXTO_LONGO, "Aspectos sensoriais (sons, texturas, luz, toque)", 7),
+    _campo_anamnese("dificuldades_aprendizagem", TipoCampo.TEXTO_LONGO, "Dificuldades de aprendizagem observadas", 8),
+    _campo_anamnese("expectativas", TipoCampo.TEXTO_LONGO, "Expectativas da família", 9),
+]
+
+
+# Catálogo de itens fixos do sistema: (chave, nome, tipo, visível, schema).
+# São provisionados por profissional. ``visivel`` liga/desliga a exibição.
+# A Anamnese é um FORMULARIO fixo cujas perguntas vêm de ``ANAMNESE_SCHEMA_PADRAO``
+# e podem ser editadas pelo profissional; os demais são seções de texto rico.
 ITENS_FIXOS = [
-    ("HISTORICO_CLINICO", "Histórico clínico", True),
-    ("PRE_ATENDIMENTO", "Pré-atendimento", False),
-    ("DOBRAS_CUTANEAS", "Dobras cutâneas", False),
-    ("RECEITA_OCULOS", "Receita de óculos", False),
-    ("RECEITUARIO", "Receituário", True),
-    ("SOLICITACAO_EXAMES", "Solicitação de Exames", False),
-    ("CID", "CID", False),
-    ("ANEXOS", "Anexos", True),
-    ("ATESTADO", "Atestado", False),
-    ("VACINA", "Vacina", False),
-    ("ODONTOGRAMA", "Odontograma", False),
+    ("ANAMNESE", "Anamnese", TipoItem.FORMULARIO, True, ANAMNESE_SCHEMA_PADRAO),
+    ("PLANO_ATENDIMENTO", "Plano de atendimento", TipoItem.FIXO, True, []),
+    ("EVOLUCAO", "Evolução", TipoItem.FIXO, True, []),
+    ("VISITA_ESCOLAR", "Visita escolar", TipoItem.FIXO, False, []),
+    ("REFLEXOES_TERAPEUTA", "Reflexões do terapeuta", TipoItem.FIXO, False, []),
+    ("ENCERRAMENTO", "Encerramento", TipoItem.FIXO, False, []),
+    ("ATUALIZACOES", "Atualizações", TipoItem.FIXO, True, []),
 ]
 
 

@@ -137,18 +137,34 @@ export function ItensTab({ profissionalId }: { profissionalId: number }) {
               <span>Exibir</span>
             </div>
             {fixos.map((item) => (
-              <label
+              <div
                 key={item.id}
-                className="flex cursor-pointer items-center justify-between border-b border-border px-3 py-2.5 last:border-0 hover:bg-muted/30"
+                className="flex items-center justify-between border-b border-border px-3 py-2.5 last:border-0 hover:bg-muted/30"
               >
                 <span className="text-sm">{item.nome}</span>
-                <input
-                  type="checkbox"
-                  checked={item.visivel}
-                  onChange={() => alternarVisivel(item)}
-                  className="size-4 rounded border-input"
-                />
-              </label>
+                <div className="flex items-center gap-2">
+                  {item.tipo_item === "FORMULARIO" && (
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => {
+                        setEmEdicao(item)
+                        setSheetAberto(true)
+                      }}
+                      title="Editar perguntas"
+                    >
+                      <PencilIcon className="size-3.5" />
+                    </Button>
+                  )}
+                  <input
+                    type="checkbox"
+                    checked={item.visivel}
+                    onChange={() => alternarVisivel(item)}
+                    className="size-4 rounded border-input"
+                    title="Exibir no prontuário"
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </div>
