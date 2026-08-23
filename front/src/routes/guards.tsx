@@ -11,7 +11,7 @@ import { Navigate, useLocation } from "react-router-dom"
 
 import { useAuthStore } from "@/store/authStore"
 import { podeVerLogs } from "@/types/auth"
-import type { Papel } from "@/types/auth"
+import { temPapel, type Papel } from "@/types/auth"
 
 interface GuardProps {
   children: ReactNode
@@ -57,7 +57,7 @@ export function RequerPapel({
 }: GuardProps & { papeis: Papel[] }) {
   const user = useAuthStore((s) => s.user)
 
-  if (!user || !papeis.includes(user.role)) {
+  if (!user || !temPapel(user, ...papeis)) {
     return <Navigate to="/" replace />
   }
 

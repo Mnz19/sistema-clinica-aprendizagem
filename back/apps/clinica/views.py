@@ -195,19 +195,19 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
             .prefetch_related("confirmacoes")
             .all()
         )
-        if self.request.user.role == Papel.PROFISSIONAL and self.action == "list":
+        if self.request.user.somente_profissional and self.action == "list":
             qs = qs.filter(profissional=self.request.user)
         return qs
 
     def get_object(self):
         obj = super().get_object()
-        if self.request.user.role == Papel.PROFISSIONAL and obj.profissional != self.request.user:
+        if self.request.user.somente_profissional and obj.profissional != self.request.user:
             raise PermissionDenied("Acesso negado: este agendamento pertence a outro profissional.")
         return obj
 
     def perform_create(self, serializer):
         user = self.request.user
-        if user.role == Papel.PROFISSIONAL:
+        if user.somente_profissional:
             profissional = serializer.validated_data.get("profissional")
             if profissional and profissional != user:
                 raise PermissionDenied(
@@ -221,7 +221,7 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
         from apps.clinica.services import criar_serie
         from apps.clinica.models import Frequencia
 
-        if request.user.role not in (Papel.RECEPCAO, Papel.DIRECAO):
+        if not request.user.tem_papel(Papel.RECEPCAO, Papel.DIRECAO):
             raise PermissionDenied("Apenas RECEPCAO ou DIRECAO podem criar séries recorrentes.")
 
         agendamento = self.get_object()
@@ -430,7 +430,7 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
 
         # Valida a transição para EM_ATENDIMENTO (papel + estado de origem).
         # Levanta ValidationError (estado terminal) ou PermissionDenied (papel).
-        validar_transicao(agendamento.status, SA.EM_ATENDIMENTO, request.user.role)
+        validar_transicao(agendamento.status, SA.EM_ATENDIMENTO, request.user.papeis_codigos)
 
         # A sala não pode já estar ocupada por outro atendimento em andamento.
         sala_ocupada = (
@@ -484,7 +484,7 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        validar_transicao(agendamento.status, SA.ATENDIDO, request.user.role)
+        validar_transicao(agendamento.status, SA.ATENDIDO, request.user.papeis_codigos)
 
         agendamento.atendimento_finalizado_em = timezone.now()
         agendamento.status = SA.ATENDIDO
@@ -506,7 +506,7 @@ class DashboardTerapeutaView(viewsets.ViewSet):
         from apps.financeiro.models import PagamentoAgendamento
 
         profissional_id = request.query_params.get("profissional_id")
-        if profissional_id and request.user.role == Papel.DIRECAO:
+        if profissional_id and request.user.tem_papel(Papel.DIRECAO):
             profissional_pk = profissional_id
         else:
             profissional_pk = request.user.pk
@@ -564,8 +564,8 @@ class ProducaoViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        # Isolamento por papel: PROFISSIONAL vê apenas a própria produção.
-        if self.request.user.role == Papel.PROFISSIONAL:
+        # Isolamento por papel: profissional "puro" vê apenas a própria produção.
+        if self.request.user.somente_profissional:
             qs = qs.filter(profissional=self.request.user)
         return qs
 
@@ -611,8 +611,8 @@ class RelatorioProducaoViewSet(viewsets.ViewSet):
         if profissional_id:
             qs = qs.filter(profissional_id=profissional_id)
 
-        # Isolamento por papel: PROFISSIONAL vê só a própria produção
-        if request.user.role == Papel.PROFISSIONAL:
+        # Isolamento por papel: profissional "puro" vê só a própria produção
+        if request.user.somente_profissional:
             qs = qs.filter(profissional=request.user)
 
         qs = qs.order_by("data", "horario_inicio")

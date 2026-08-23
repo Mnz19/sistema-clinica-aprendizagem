@@ -24,7 +24,7 @@ class IsDirecaoOuSuperuser(BasePermission):
         return bool(
             usuario
             and usuario.is_authenticated
-            and (usuario.is_superuser or usuario.role == Papel.DIRECAO)
+            and (usuario.is_superuser or usuario.tem_papel(Papel.DIRECAO))
         )
 
 
@@ -41,7 +41,7 @@ class TemPapel(BasePermission):
         return bool(
             usuario
             and usuario.is_authenticated
-            and usuario.role in self.papeis_permitidos
+            and usuario.tem_papel(*self.papeis_permitidos)
         )
 
 

@@ -12,10 +12,30 @@ class UsuarioManager(BaseUserManager):
         if not email:
             raise ValueError("O e-mail deve ser informado.")
         email = self.normalize_email(email)
+        # ``papeis`` (M2M) não pode ser passado ao construtor; extrai antes.
+        papeis = extra_fields.pop("papeis", None)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
+        self._sincronizar_papeis(user, papeis)
         return user
+
+    def _sincronizar_papeis(self, user, papeis=None):
+        """
+        Garante o conjunto ``papeis`` do usuário (multi-papel).
+
+        Compat: quem ainda cria usuário só com ``role=`` (código legado e testes)
+        recebe automaticamente ``papeis = {role}``. O signal em ``models`` mantém
+        o ``role`` como o papel principal derivado do conjunto.
+        """
+        from apps.accounts.models import PapelUsuario
+
+        codigos = set(papeis) if papeis else {user.role}
+        objs = [
+            PapelUsuario.objects.using(self._db).get_or_create(codigo=c)[0]
+            for c in codigos
+        ]
+        user.papeis.set(objs)
 
     def create_user(self, email, password=None, **extra_fields):
         """Cria um usuário comum (não administrativo)."""

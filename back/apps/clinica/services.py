@@ -203,7 +203,7 @@ def transferir_agendamento(
     erros: dict[str, list[str]] = {}
 
     # --- Profissional de destino válido ---------------------------------------
-    if getattr(novo_profissional, "role", None) != Papel.PROFISSIONAL:
+    if not novo_profissional.eh_profissional:
         erros.setdefault("profissional", []).append(
             "O usuário informado não possui o papel de profissional."
         )

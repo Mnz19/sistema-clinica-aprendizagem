@@ -67,7 +67,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { PAPEIS_GESTORES } from "@/types/usuario"
 import { PAPEIS_PRONTUARIO, PAPEIS_CONFIG_PRONTUARIO } from "@/types/prontuario"
 import { PAPEIS_CONFIG_WHATSAPP } from "@/types/whatsapp"
-import { podeVerLogs } from "@/types/auth"
+import { podeVerLogs, temPapel } from "@/types/auth"
 import type { Papel } from "@/types/auth"
 
 interface NavItem {
@@ -115,7 +115,7 @@ function NavContent() {
   // Itens visíveis conforme o acesso do usuário (itens sem restrição são gerais).
   const podeVerItem = (item: NavItem) => {
     if (item.somenteSuperadmin) return podeVerLogs(user)
-    if (item.papeis) return !!user && item.papeis.includes(user.role)
+    if (item.papeis) return temPapel(user, ...item.papeis)
     return true
   }
   const itensVisiveis = navItems.filter(podeVerItem)

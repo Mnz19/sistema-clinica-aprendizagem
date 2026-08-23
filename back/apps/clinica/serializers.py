@@ -277,9 +277,9 @@ class AgendamentoSerializer(serializers.ModelSerializer):
         status_atual = getattr(instancia, "status", None)
         if instancia is not None and status_atual and status and status != status_atual:
             request = self.context.get("request")
-            if request and hasattr(request.user, "role"):
+            if request and hasattr(request.user, "papeis_codigos"):
                 from apps.clinica.transitions import validar_transicao
-                validar_transicao(status_atual, status, request.user.role)
+                validar_transicao(status_atual, status, request.user.papeis_codigos)
 
         # --- Parecer obrigatório para FALTA e DESMARCADO ---------------------------
         parecer_status = attrs.get(
@@ -331,7 +331,7 @@ class AgendamentoSerializer(serializers.ModelSerializer):
                 "O serviço selecionado não é oferecido pelo profissional informado."
             )
 
-        if profissional.role != Papel.PROFISSIONAL:
+        if not profissional.eh_profissional:
             erros.setdefault("profissional", []).append(
                 "O usuário informado não possui o papel de profissional."
             )

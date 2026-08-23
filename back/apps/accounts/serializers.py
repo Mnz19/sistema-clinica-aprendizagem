@@ -59,6 +59,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
     foto = serializers.SerializerMethodField()
     conselho = serializers.CharField(read_only=True)
+    papeis = serializers.SerializerMethodField()
     # Mesma forma do serializer de escrita: ids + detalhe (mantém o tipo do front único).
     especialidades = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     especialidades_detalhe = EspecialidadeSerializer(
@@ -72,6 +73,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
             "nome",
             "email",
             "role",
+            "papeis",
             "foto",
             *CAMPOS_CADASTRO,
             "especialidades",
@@ -89,6 +91,10 @@ class UsuarioSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_foto(self, obj):
         return _foto_url(obj, self.context)
+
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_papeis(self, obj):
+        return sorted(obj.papeis_codigos)
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -168,6 +174,12 @@ class UsuarioAdminSerializer(serializers.ModelSerializer):
         help_text="Se verdadeiro, cria sem senha e envia convite por e-mail.",
     )
     role = serializers.ChoiceField(choices=Papel.choices, default=Papel.PROFISSIONAL)
+    papeis = serializers.ListField(
+        child=serializers.ChoiceField(choices=Papel.choices),
+        required=False,
+        write_only=True,
+        help_text="Papéis do usuário (um ou mais). Se omitido, usa o 'role'.",
+    )
     foto = serializers.SerializerMethodField()
     conselho = serializers.CharField(read_only=True)
     # Aceita CPF com máscara; a normalização para dígitos ocorre em ``validate_cpf``.
@@ -189,6 +201,7 @@ class UsuarioAdminSerializer(serializers.ModelSerializer):
             "nome",
             "email",
             "role",
+            "papeis",
             "foto",
             *CAMPOS_CADASTRO,
             "especialidades",
@@ -216,6 +229,22 @@ class UsuarioAdminSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_foto(self, obj):
         return _foto_url(obj, self.context)
+
+    def to_representation(self, instance):
+        # ``papeis`` é write_only (ListField); injeta a leitura como lista de códigos.
+        data = super().to_representation(instance)
+        data["papeis"] = sorted(instance.papeis_codigos)
+        return data
+
+    def _aplicar_papeis(self, usuario, papeis):
+        """Define o conjunto de papéis (o signal sincroniza o ``role`` principal)."""
+        from apps.accounts.models import PapelUsuario
+
+        codigos = set(papeis) if papeis else {usuario.role}
+        objs = [
+            PapelUsuario.objects.get_or_create(codigo=c)[0] for c in codigos
+        ]
+        usuario.papeis.set(objs)
 
     def validate_password(self, value):
         validate_password(value)
@@ -252,11 +281,23 @@ class UsuarioAdminSerializer(serializers.ModelSerializer):
                     {"password": "No modo convite não se define senha manualmente."}
                 )
 
+        # Papéis não podem vir vazios quando informados explicitamente.
+        if "papeis" in attrs and not attrs["papeis"]:
+            raise serializers.ValidationError(
+                {"papeis": "Selecione ao menos um papel."}
+            )
+
         # Profissional precisa ter ao menos uma especialidade. Só cobramos na
         # criação ou quando as especialidades são alteradas — não bloqueia a
         # edição de outros campos de um profissional legado que ainda não a tem.
-        papel = attrs.get("role", getattr(self.instance, "role", None))
-        if papel == Papel.PROFISSIONAL:
+        # Multi-papel: vale se PROFISSIONAL estiver entre os papéis aplicados.
+        if "papeis" in attrs:
+            papeis_aplicados = set(attrs["papeis"])
+        elif self.instance is not None:
+            papeis_aplicados = self.instance.papeis_codigos
+        else:
+            papeis_aplicados = {attrs.get("role", Papel.PROFISSIONAL)}
+        if Papel.PROFISSIONAL in papeis_aplicados:
             if "especialidades" in attrs and not attrs["especialidades"]:
                 raise serializers.ValidationError(
                     {"especialidades": "Selecione ao menos uma especialidade para o profissional."}
@@ -271,6 +312,7 @@ class UsuarioAdminSerializer(serializers.ModelSerializer):
         senha = validated_data.pop("password", None)
         convite = validated_data.pop("enviar_convite", False)
         especialidades = validated_data.pop("especialidades", None)
+        papeis = validated_data.pop("papeis", None)
 
         usuario = Usuario(**validated_data)
         if convite:
@@ -281,6 +323,8 @@ class UsuarioAdminSerializer(serializers.ModelSerializer):
             usuario.set_password(senha)
             usuario.precisa_trocar_senha = True  # troca obrigatória no 1º acesso
         usuario.save()
+        # Define os papéis (o signal deriva o ``role`` principal do conjunto).
+        self._aplicar_papeis(usuario, papeis)
         if especialidades is not None:
             usuario.especialidades.set(especialidades)
 
@@ -292,6 +336,7 @@ class UsuarioAdminSerializer(serializers.ModelSerializer):
         validated_data.pop("enviar_convite", None)
         senha = validated_data.pop("password", None)
         especialidades = validated_data.pop("especialidades", None)
+        papeis = validated_data.pop("papeis", None)
         for campo, valor in validated_data.items():
             setattr(instance, campo, valor)
         if senha:
@@ -299,6 +344,12 @@ class UsuarioAdminSerializer(serializers.ModelSerializer):
             instance.set_password(senha)
             instance.precisa_trocar_senha = True
         instance.save()
+        # Só mexe nos papéis quando enviados; o signal ressincroniza o ``role``.
+        if papeis is not None:
+            self._aplicar_papeis(instance, papeis)
+        elif "role" in validated_data:
+            # Edição legada apenas com ``role``: reflete no conjunto (coerência).
+            self._aplicar_papeis(instance, [validated_data["role"]])
         if especialidades is not None:
             instance.especialidades.set(especialidades)
         return instance

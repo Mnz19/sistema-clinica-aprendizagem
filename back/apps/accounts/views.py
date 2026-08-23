@@ -10,6 +10,7 @@ Endpoints:
   - Reset de senha       → POST /api/auth/password-reset/…  (stub para etapa futura)
   - UsuarioViewSet       → /api/usuarios/                   (CRUD p/ DIREÇÃO e SUPERVISÃO)
 """
+import django_filters
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
@@ -40,6 +41,23 @@ from apps.accounts.serializers import (
 from apps.accounts.utils import get_client_ip
 
 Usuario = get_user_model()
+
+
+class UsuarioFilter(django_filters.FilterSet):
+    """
+    Filtros do endpoint de usuários.
+
+    - ``role``  : filtra pelo **papel principal** (coluna derivada).
+    - ``papel`` : filtra por **qualquer** papel do conjunto (multi-papel). É o que
+      a agenda usa para listar quem atende (``?papel=PROFISSIONAL``), pegando
+      também quem acumula papéis (ex.: DIREÇÃO+PROFISSIONAL).
+    """
+
+    papel = django_filters.CharFilter(field_name="papeis__codigo")
+
+    class Meta:
+        model = Usuario
+        fields = ["role", "papel", "is_active"]
 
 
 class LoginView(TokenObtainPairView):
@@ -221,10 +239,12 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     convite por e-mail. A ação ``enviar-convite`` (re)envia o convite.
     """
 
-    queryset = Usuario.objects.all().prefetch_related("especialidades")
+    queryset = (
+        Usuario.objects.all().prefetch_related("especialidades", "papeis").distinct()
+    )
     serializer_class = UsuarioAdminSerializer
     permission_classes = [IsSupervisao]
-    filterset_fields = ["role", "is_active"]
+    filterset_class = UsuarioFilter
     search_fields = ["nome", "email"]
     ordering_fields = ["nome", "email", "criado_em"]
     ordering = ["nome"]

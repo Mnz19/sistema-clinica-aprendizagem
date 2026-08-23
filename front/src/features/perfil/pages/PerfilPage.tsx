@@ -20,6 +20,7 @@ import { CONSELHO_LABELS, PAPEL_LABELS, TIPOS_CONSELHO } from "@/types/auth"
 import { UFS } from "@/types/paciente"
 import { atualizarPerfil, trocarSenha } from "@/services/auth"
 import { useAuthStore } from "@/store/authStore"
+import GoogleAgendaCard from "@/features/perfil/components/GoogleAgendaCard"
 
 export default function PerfilPage() {
   const user = useAuthStore((s) => s.user)
@@ -274,6 +275,9 @@ export default function PerfilPage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Integração com Google Agenda */}
+      <GoogleAgendaCard />
     </div>
   )
 }

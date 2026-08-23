@@ -57,7 +57,7 @@ export default function UsuariosListPage() {
   const carregar = useCallback(() => {
     setCarregando(true)
     setErro(null)
-    listarUsuarios({ search: busca, role: papel })
+    listarUsuarios({ search: busca, papel })
       .then(setUsuarios)
       .catch((e) => setErro(mensagemDeErro(e)))
       .finally(() => setCarregando(false))
@@ -182,9 +182,13 @@ export default function UsuariosListPage() {
                     {u.email}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant={papelVariant(u.role)}>
-                      {PAPEL_LABELS[u.role]}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1">
+                      {(u.papeis?.length ? u.papeis : [u.role]).map((p) => (
+                        <Badge key={p} variant={papelVariant(p)}>
+                          {PAPEL_LABELS[p]}
+                        </Badge>
+                      ))}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     {u.is_active ? (

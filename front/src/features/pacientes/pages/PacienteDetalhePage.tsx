@@ -33,7 +33,7 @@ import {
 import { mensagemDeErro } from "@/utils/apiError"
 import { formatarCep, formatarCpf, formatarData, formatarTelefone } from "@/utils/format"
 import { useAuthStore } from "@/store/authStore"
-import { PAPEL_LABELS } from "@/types/auth"
+import { PAPEL_LABELS, temPapel } from "@/types/auth"
 import { PAPEIS_PRONTUARIO } from "@/types/prontuario"
 import { PARENTESCOS, SERIES_ESCOLARES } from "@/types/paciente"
 import type { Paciente, SerieEscolar } from "@/types/paciente"
@@ -59,7 +59,7 @@ export default function PacienteDetalhePage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
-  const podeVerProntuario = !!user && PAPEIS_PRONTUARIO.includes(user.role)
+  const podeVerProntuario = temPapel(user, ...PAPEIS_PRONTUARIO)
 
   const [paciente, setPaciente] = useState<Paciente | null>(null)
   const [carregando, setCarregando] = useState(true)

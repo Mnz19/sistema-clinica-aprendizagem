@@ -15,8 +15,15 @@ gunicorn==23.0.0
 # Manipulação de imagens (obrigatório para ImageField — foto de perfil).
 Pillow==11.1.0
 # Driver PostgreSQL — usado apenas em produção (em dev o banco é SQLite).
-psycopg[binary]==3.2.9
+psycopg[binary]==3.2.10
 # Armazenamento de mídias no Amazon S3 (bucket PRIVADO + URLs assinadas).
 # Ativado só quando USE_S3=True; em dev o storage continua sendo o disco local.
 # O extra [s3] já traz o boto3.
 django-storages[s3]==1.14.4
+# Integração com Google Agenda (Calendar API): OAuth 2.0 por profissional e
+# sincronização dos agendamentos com o calendário pessoal de cada um.
+google-auth==2.56.3
+google-auth-oauthlib==1.4.0
+google-api-python-client==2.199.0
+# Criptografia dos refresh tokens do Google guardados no banco (Fernet).
+cryptography==46.0.7

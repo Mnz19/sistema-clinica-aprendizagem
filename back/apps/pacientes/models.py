@@ -195,7 +195,7 @@ class Paciente(models.Model):
         related_name="pacientes",
         blank=True,
         limit_choices_to={
-            "role__in": [Papel.PROFISSIONAL, Papel.SUPERVISAO, Papel.DIRECAO],
+            "papeis__codigo__in": [Papel.PROFISSIONAL, Papel.SUPERVISAO, Papel.DIRECAO],
             "is_active": True,
         },
         verbose_name="profissionais responsáveis",

@@ -152,7 +152,11 @@ export function UsuarioFormSheet({ aberto, usuario, onFechar, onSalvo }: Props) 
   // O componente é remontado (via `key`) a cada abertura — o estado inicial
   // deriva das props, sem efeito de sincronização.
   const [form, setForm] = useState<EstadoForm>(() => estadoInicial(usuario))
-  const [role, setRole] = useState<Papel>(usuario?.role ?? "PROFISSIONAL")
+  const [papeis, setPapeis] = useState<Papel[]>(
+    usuario?.papeis?.length
+      ? usuario.papeis
+      : [usuario?.role ?? "PROFISSIONAL"]
+  )
   const [ativo, setAtivo] = useState(usuario?.is_active ?? true)
   const [especialidades, setEspecialidades] = useState<number[]>(
     usuario?.especialidades ?? []
@@ -165,7 +169,15 @@ export function UsuarioFormSheet({ aberto, usuario, onFechar, onSalvo }: Props) 
   const [reenviando, setReenviando] = useState(false)
   const [statusCep, setStatusCep] = useState<StatusCep>("idle")
 
-  const ehProfissional = role === "PROFISSIONAL"
+  const ehProfissional = papeis.includes("PROFISSIONAL")
+
+  function alternarPapel(papel: Papel) {
+    setPapeis((atuais) =>
+      atuais.includes(papel)
+        ? atuais.filter((p) => p !== papel)
+        : [...atuais, papel]
+    )
+  }
 
   function campo<K extends keyof EstadoForm>(chave: K) {
     return {
@@ -223,6 +235,10 @@ export function UsuarioFormSheet({ aberto, usuario, onFechar, onSalvo }: Props) 
       setErro("Preencha nome e e-mail.")
       return
     }
+    if (papeis.length === 0) {
+      setErro("Selecione ao menos um papel.")
+      return
+    }
     if (ehProfissional && especialidades.length === 0) {
       setErro("Selecione ao menos uma especialidade para o profissional.")
       return
@@ -237,7 +253,7 @@ export function UsuarioFormSheet({ aberto, usuario, onFechar, onSalvo }: Props) 
     const payload: UsuarioPayload = {
       nome: form.nome.trim(),
       email: form.email.trim(),
-      role,
+      papeis,
       is_active: ativo,
       cpf: form.cpf.trim() || null,
       rg: form.rg.trim(),
@@ -328,15 +344,33 @@ export function UsuarioFormSheet({ aberto, usuario, onFechar, onSalvo }: Props) 
                   <Label>E-mail *</Label>
                   <Input type="email" {...campo("email")} placeholder="email@clinica.com" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Papel</Label>
-                  <Select value={role} onChange={(e) => setRole(e.target.value as Papel)}>
-                    {Object.values(PAPEIS).map((p) => (
-                      <option key={p} value={p}>
-                        {PAPEL_LABELS[p]}
-                      </option>
-                    ))}
-                  </Select>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Papéis</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.values(PAPEIS).map((p) => {
+                      const marcado = papeis.includes(p)
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => alternarPapel(p)}
+                          aria-pressed={marcado}
+                          className={
+                            "rounded-full border px-3 py-1 text-sm transition-colors " +
+                            (marcado
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background text-muted-foreground hover:text-foreground")
+                          }
+                        >
+                          {PAPEL_LABELS[p]}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Um usuário pode ter mais de um papel (ex.: Direção + Profissional
+                    aparece na agenda e enxerga tudo).
+                  </p>
                 </div>
               </div>
             </Secao>

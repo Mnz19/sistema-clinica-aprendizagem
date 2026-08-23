@@ -65,6 +65,7 @@ LOCAL_APPS = [
     "apps.whatsapp",
     "apps.financeiro",
     "apps.fila_espera",
+    "apps.google_agenda.apps.GoogleAgendaConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -275,6 +276,37 @@ WHATSAPP_PHONE_NUMBER_ID = env("WHATSAPP_PHONE_NUMBER_ID", default="")
 WHATSAPP_API_VERSION = env("WHATSAPP_API_VERSION", default="v21.0")
 # Token de verificação do webhook (você define o mesmo valor no painel da Meta).
 WHATSAPP_VERIFY_TOKEN = env("WHATSAPP_VERIFY_TOKEN", default="")
+
+# --- Google Agenda (Calendar API) -------------------------------------------
+# Sincronização (mão única app → Google) dos agendamentos com o Google Agenda
+# pessoal de cada profissional, via OAuth 2.0 por usuário.
+#
+# Sem CLIENT_ID/SECRET a integração fica DESLIGADA (os endpoints respondem 503 e
+# nenhum evento é enviado) — assim o projeto roda em dev sem configurar nada.
+GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID", default="")
+GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET", default="")
+# URI de redirecionamento registrada no Google Cloud (deve bater EXATAMENTE).
+GOOGLE_OAUTH_REDIRECT_URI = env(
+    "GOOGLE_OAUTH_REDIRECT_URI",
+    default="http://localhost:8000/api/google/callback/",
+)
+# Escopo mínimo: gerenciar apenas os eventos criados pelo app no calendário.
+GOOGLE_CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
+# Chave Fernet (base64, 32 bytes) para criptografar os refresh tokens no banco.
+# Gere com: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+GOOGLE_TOKEN_ENCRYPTION_KEY = env("GOOGLE_TOKEN_ENCRYPTION_KEY", default="")
+# Incluir dados do paciente (nome/serviço/observações) no evento do Google.
+# Decisão de negócio/LGPD: o evento é sempre criado com visibilidade "private".
+GOOGLE_EVENTO_COM_DADOS_PACIENTE = env.bool(
+    "GOOGLE_EVENTO_COM_DADOS_PACIENTE", default=True
+)
+# Para onde o backend redireciona o navegador ao terminar o fluxo OAuth.
+GOOGLE_OAUTH_SUCCESS_REDIRECT = env(
+    "GOOGLE_OAUTH_SUCCESS_REDIRECT", default=f"{FRONTEND_URL}/perfil?google=conectado"
+)
+GOOGLE_OAUTH_ERROR_REDIRECT = env(
+    "GOOGLE_OAUTH_ERROR_REDIRECT", default=f"{FRONTEND_URL}/perfil?google=erro"
+)
 
 # --- OpenAPI (drf-spectacular) ----------------------------------------------
 SPECTACULAR_SETTINGS = {

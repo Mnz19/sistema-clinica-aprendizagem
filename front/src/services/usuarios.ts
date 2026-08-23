@@ -10,7 +10,10 @@ import type { UsuarioPayload } from "@/types/usuario"
 
 interface ListarParams {
   search?: string
+  /** Filtra pelo papel principal (coluna derivada). */
   role?: string
+  /** Filtra por qualquer papel do conjunto (multi-papel) — ex.: agenda. */
+  papel?: string
   is_active?: boolean
 }
 
@@ -22,6 +25,7 @@ export async function listarUsuarios(
     params: {
       search: params.search || undefined,
       role: params.role || undefined,
+      papel: params.papel || undefined,
       is_active: params.is_active,
     },
   })

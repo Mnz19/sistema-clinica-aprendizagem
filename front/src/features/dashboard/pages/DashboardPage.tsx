@@ -29,7 +29,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { listarPacientes } from "@/services/pacientes"
 import { listarUsuarios } from "@/services/usuarios"
 import { mensagemDeErro } from "@/utils/apiError"
-import { PAPEL_LABELS } from "@/types/auth"
+import { PAPEL_LABELS, temPapel } from "@/types/auth"
 import { PAPEIS_GESTORES } from "@/types/usuario"
 import { PAPEIS_PRONTUARIO } from "@/types/prontuario"
 import type { PacienteListItem } from "@/types/paciente"
@@ -74,8 +74,8 @@ interface Stat {
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const ehGestor = !!user && PAPEIS_GESTORES.includes(user.role)
-  const podeProntuario = !!user && PAPEIS_PRONTUARIO.includes(user.role)
+  const ehGestor = temPapel(user, ...PAPEIS_GESTORES)
+  const podeProntuario = temPapel(user, ...PAPEIS_PRONTUARIO)
 
   const [pacientes, setPacientes] = useState<PacienteListItem[]>([])
   const [equipeAtiva, setEquipeAtiva] = useState<number | null>(null)

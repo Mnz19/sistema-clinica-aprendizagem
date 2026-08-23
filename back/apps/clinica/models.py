@@ -78,7 +78,7 @@ class Servico(models.Model):
     profissionais = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name="servicos",
-        limit_choices_to={"role": Papel.PROFISSIONAL},
+        limit_choices_to={"papeis__codigo": Papel.PROFISSIONAL},
         verbose_name="profissionais",
     )
     ativo = models.BooleanField("ativo", default=True, db_index=True)
@@ -102,7 +102,7 @@ class DisponibilidadeProfissional(ModeloBase):
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="disponibilidades",
-        limit_choices_to={"role": Papel.PROFISSIONAL},
+        limit_choices_to={"papeis__codigo": Papel.PROFISSIONAL},
         verbose_name="profissional",
     )
     dia_semana = models.IntegerField(
@@ -132,7 +132,7 @@ class AusenciaProfissional(ModeloBase):
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="ausencias",
-        limit_choices_to={"role": Papel.PROFISSIONAL},
+        limit_choices_to={"papeis__codigo": Papel.PROFISSIONAL},
         verbose_name="profissional",
     )
     data_inicio = models.DateField("data de início")
@@ -215,7 +215,7 @@ class Agendamento(ModeloBase):
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="agendamentos",
-        limit_choices_to={"role": Papel.PROFISSIONAL},
+        limit_choices_to={"papeis__codigo": Papel.PROFISSIONAL},
         verbose_name="profissional",
     )
     sala = models.ForeignKey(

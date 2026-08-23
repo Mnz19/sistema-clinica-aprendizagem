@@ -29,8 +29,20 @@ class UsuarioAdmin(BaseUserAdmin):
     list_display = ["email", "nome", "role", "is_active", "is_staff", "last_login"]
     list_filter = ["role", "is_active", "is_staff", "is_superuser"]
     search_fields = ["email", "nome", "cpf"]
-    readonly_fields = ["last_login", "criado_em", "atualizado_em"]
-    filter_horizontal = ["especialidades", "groups", "user_permissions"]
+    # ``role`` é derivado do conjunto ``papeis`` (papel principal) — somente leitura
+    # na edição; na criação ele é escolhido em ``add_fieldsets`` e semeia ``papeis``.
+    readonly_fields = ["role", "last_login", "criado_em", "atualizado_em"]
+    filter_horizontal = ["papeis", "especialidades", "groups", "user_permissions"]
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        # Usuário criado pelo admin sem papéis explícitos herda o ``role`` escolhido.
+        usuario = form.instance
+        if not usuario.papeis.exists():
+            from apps.accounts.models import PapelUsuario
+
+            papel, _ = PapelUsuario.objects.get_or_create(codigo=usuario.role)
+            usuario.papeis.add(papel)
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
@@ -59,6 +71,7 @@ class UsuarioAdmin(BaseUserAdmin):
         (_("Qualificação profissional"), {"fields": ("especialidades",)}),
         (_("Papel e permissões"), {
             "fields": (
+                "papeis",
                 "role",
                 "is_active",
                 "is_staff",

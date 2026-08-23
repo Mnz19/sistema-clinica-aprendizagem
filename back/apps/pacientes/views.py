@@ -42,8 +42,8 @@ class ProfissionaisDisponiveisView(generics.ListAPIView):
     def get_queryset(self):
         return Usuario.objects.filter(
             is_active=True,
-            role__in=[Papel.PROFISSIONAL, Papel.SUPERVISAO, Papel.DIRECAO],
-        ).order_by("nome")
+            papeis__codigo__in=[Papel.PROFISSIONAL, Papel.SUPERVISAO, Papel.DIRECAO],
+        ).distinct().order_by("nome")
 
 
 def _pacientes_visiveis(user):
@@ -52,7 +52,7 @@ def _pacientes_visiveis(user):
     if not getattr(user, "is_authenticated", False):
         return Paciente.objects.none()
     qs = Paciente.objects.all()
-    if getattr(user, "role", None) == Papel.PROFISSIONAL:
+    if getattr(user, "somente_profissional", False):
         qs = qs.filter(profissionais=user)
     return qs
 
@@ -89,7 +89,7 @@ class PacienteViewSet(viewsets.ModelViewSet):
         paciente = serializer.save(criado_por=self.request.user)
         # Se um profissional cadastra um paciente, vincula-se a ele automaticamente.
         if (
-            self.request.user.role == Papel.PROFISSIONAL
+            self.request.user.eh_profissional
             and not paciente.profissionais.exists()
         ):
             paciente.profissionais.add(self.request.user)

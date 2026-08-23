@@ -146,8 +146,8 @@ class PacienteSerializer(serializers.ModelSerializer):
         required=False,
         queryset=Usuario.objects.filter(
             is_active=True,
-            role__in=[Papel.PROFISSIONAL, Papel.SUPERVISAO, Papel.DIRECAO],
-        ),
+            papeis__codigo__in=[Papel.PROFISSIONAL, Papel.SUPERVISAO, Papel.DIRECAO],
+        ).distinct(),
     )
     profissionais_detalhe = ProfissionalResumoSerializer(
         source="profissionais", many=True, read_only=True

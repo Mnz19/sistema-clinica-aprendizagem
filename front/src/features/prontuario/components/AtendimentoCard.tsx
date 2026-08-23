@@ -18,6 +18,7 @@ import {
 } from "@/services/agendamento"
 import { atendimentoEmAndamento, type Agendamento } from "@/types/agendamento"
 import { useAuthStore } from "@/store/authStore"
+import { temPapel } from "@/types/auth"
 import { mensagemDeErro } from "@/utils/apiError"
 import { formatarCronometro, formatarDataHora, formatarHorario } from "@/utils/format"
 
@@ -64,8 +65,8 @@ function segundosDecorridos(agendamento: Agendamento, agora: number): number {
 export function AtendimentoCard({ pacienteId }: Props) {
   // Só PROFISSIONAL e DIRECAO podem iniciar/finalizar (espelha o backend);
   // SUPERVISAO vê o estado/cronômetro em modo leitura.
-  const role = useAuthStore((s) => s.user?.role)
-  const podeAgir = role === "PROFISSIONAL" || role === "DIRECAO"
+  const user = useAuthStore((s) => s.user)
+  const podeAgir = temPapel(user, "PROFISSIONAL", "DIRECAO")
 
   const [agendamento, setAgendamento] = useState<Agendamento | null>(null)
   const [carregando, setCarregando] = useState(true)

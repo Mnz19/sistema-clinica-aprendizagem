@@ -13,7 +13,10 @@ export const PAPEIS_GESTORES: Papel[] = ["DIRECAO", "SUPERVISAO"]
 export interface UsuarioPayload {
   nome: string
   email: string
-  role: Papel
+  /** Papel principal — opcional; o backend deriva de `papeis`. */
+  role?: Papel
+  /** Papéis do usuário (um ou mais). É o que a gestão envia agora. */
+  papeis?: Papel[]
   is_active: boolean
 
   // Dados pessoais (opcionais). CPF com máscara é normalizado pelo backend.

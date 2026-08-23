@@ -12,6 +12,6 @@ def pacientes_visiveis(user):
     if not getattr(user, "is_authenticated", False):
         return Paciente.objects.none()
     qs = Paciente.objects.all()
-    if getattr(user, "role", None) == Papel.PROFISSIONAL:
+    if getattr(user, "somente_profissional", False):
         qs = qs.filter(profissionais=user)
     return qs

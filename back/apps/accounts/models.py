@@ -7,6 +7,8 @@ Modelos do app de contas.
 """
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.db import models
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 
 from apps.accounts.managers import UsuarioManager
 from apps.accounts.validators import validar_cpf, validar_imagem
@@ -120,6 +122,41 @@ class Papel(models.TextChoices):
     FINANCEIRO = "FINANCEIRO", "Financeiro"  # visualiza valores de serviços (futuro)
 
 
+# Ordem de precedência para derivar o "papel principal" (``Usuario.role``) a
+# partir do conjunto de papéis — do mais abrangente ao mais específico.
+PRECEDENCIA_PAPEL = [
+    Papel.DIRECAO,
+    Papel.SUPERVISAO,
+    Papel.PROFISSIONAL,
+    Papel.RECEPCAO,
+    Papel.FINANCEIRO,
+]
+
+
+class PapelUsuario(models.Model):
+    """
+    Papel atribuível a um usuário (tabela de apoio do M2M ``Usuario.papeis``).
+
+    Um usuário pode acumular papéis (ex.: DIREÇÃO **e** PROFISSIONAL). Os cinco
+    valores de ``Papel`` são semeados por migration e não mudam em runtime.
+    """
+
+    codigo = models.CharField(
+        "código", max_length=20, choices=Papel.choices, unique=True
+    )
+
+    class Meta:
+        verbose_name = "Papel"
+        verbose_name_plural = "Papéis"
+        ordering = ["codigo"]
+
+    def __str__(self) -> str:
+        try:
+            return Papel(self.codigo).label
+        except ValueError:
+            return self.codigo
+
+
 class Usuario(AbstractUser):
     """
     Usuário do sistema, autenticado por e-mail (sem username).
@@ -136,11 +173,21 @@ class Usuario(AbstractUser):
     email = models.EmailField("e-mail", unique=True, db_index=True)
     nome = models.CharField("nome completo", max_length=150)
     role = models.CharField(
-        "papel",
+        "papel principal",
         max_length=20,
         choices=Papel.choices,
         default=Papel.PROFISSIONAL,
-        help_text="Nível de acesso do usuário na clínica.",
+        help_text=(
+            "Papel principal (derivado do conjunto ``papeis`` por precedência). "
+            "Mantido automaticamente; use ``papeis`` para atribuir múltiplos papéis."
+        ),
+    )
+    papeis = models.ManyToManyField(
+        "accounts.PapelUsuario",
+        related_name="usuarios",
+        blank=True,
+        verbose_name="papéis",
+        help_text="Todos os papéis do usuário (um usuário pode ter mais de um).",
     )
     foto = models.ImageField(
         "foto de perfil",
@@ -218,10 +265,48 @@ class Usuario(AbstractUser):
     def __str__(self):
         return f"{self.nome} <{self.email}>" if self.nome else self.email
 
+    # --- Papéis (multi-papel) ------------------------------------------------
+    @property
+    def papeis_codigos(self) -> set:
+        """Conjunto de códigos de papel do usuário (ex.: ``{"DIRECAO", "PROFISSIONAL"}``)."""
+        return {p.codigo for p in self.papeis.all()}
+
+    def tem_papel(self, *codigos) -> bool:
+        """Verdadeiro se o usuário tem **algum** dos papéis informados."""
+        return bool(self.papeis_codigos & set(codigos))
+
+    @property
+    def eh_profissional(self) -> bool:
+        """Atende pacientes (aparece na agenda, tem disponibilidade, prontuário)."""
+        return self.tem_papel(Papel.PROFISSIONAL)
+
+    @property
+    def eh_gestor(self) -> bool:
+        """Tem papel de gestão (DIREÇÃO ou SUPERVISÃO): enxerga tudo."""
+        return self.tem_papel(Papel.DIRECAO, Papel.SUPERVISAO)
+
+    @property
+    def somente_profissional(self) -> bool:
+        """
+        Profissional "puro" — cujo único papel é PROFISSIONAL.
+
+        Usado no isolamento "vê apenas os próprios pacientes/agendamentos": quem
+        acumula outro papel (ex.: DIREÇÃO+PROFISSIONAL) enxerga tudo.
+        """
+        return self.papeis_codigos == {Papel.PROFISSIONAL}
+
+    def papel_principal(self) -> str:
+        """Papel de maior precedência dentre os do usuário (fallback: ``role``)."""
+        cods = self.papeis_codigos
+        for papel in PRECEDENCIA_PAPEL:
+            if papel in cods:
+                return papel
+        return self.role or Papel.PROFISSIONAL
+
     @property
     def is_direcao(self):
         """Atalho: indica se o usuário tem papel de DIREÇÃO."""
-        return self.role == Papel.DIRECAO
+        return self.tem_papel(Papel.DIRECAO)
 
     @property
     def conselho(self):
@@ -271,3 +356,19 @@ class LogAcesso(models.Model):
     def __str__(self):
         estado = "sucesso" if self.sucesso else "falha"
         return f"{self.email_informado} — {estado} em {self.data_hora:%d/%m/%Y %H:%M}"
+
+
+@receiver(m2m_changed, sender=Usuario.papeis.through)
+def _sincronizar_papel_principal(sender, instance, action, **kwargs):
+    """
+    Mantém ``Usuario.role`` (papel principal) coerente com o conjunto ``papeis``.
+
+    Sempre que os papéis mudam, o ``role`` passa a ser o de maior precedência —
+    assim exibição, claim do JWT e todo código que ainda lê ``role`` continuam
+    funcionando sem saber do multi-papel.
+    """
+    if action in ("post_add", "post_remove", "post_clear"):
+        principal = instance.papel_principal()
+        if instance.role != principal:
+            instance.role = principal
+            instance.save(update_fields=["role", "atualizado_em"])

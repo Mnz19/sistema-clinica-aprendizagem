@@ -142,7 +142,8 @@ function toAusenciaBody(payload: AusenciaPayload) {
 // --- Profissionais ------------------------------------------------------------
 
 export async function listarProfissionaisClinica(): Promise<Usuario[]> {
-  return listarUsuarios({ role: PAPEIS.PROFISSIONAL, is_active: true })
+  // `papel` (não `role`): pega também quem acumula papéis, como DIREÇÃO+PROFISSIONAL.
+  return listarUsuarios({ papel: PAPEIS.PROFISSIONAL, is_active: true })
 }
 
 // --- Salas --------------------------------------------------------------------

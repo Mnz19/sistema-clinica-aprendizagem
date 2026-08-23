@@ -71,7 +71,10 @@ export interface Usuario {
   id: number
   nome: string
   email: string
+  /** Papel principal (derivado do conjunto `papeis`). Usado em exibição. */
   role: Papel
+  /** Todos os papéis do usuário (um usuário pode acumular papéis). */
+  papeis: Papel[]
   foto: string | null
 
   // Dados pessoais
@@ -115,6 +118,26 @@ export interface Usuario {
 }
 
 /**
+ * Conjunto de papéis do usuário (fallback para `[role]` em tokens/caches antigos
+ * que ainda não trazem `papeis`).
+ */
+export function papeisDoUsuario(
+  user: Pick<Usuario, "papeis" | "role"> | null | undefined,
+): Papel[] {
+  if (!user) return []
+  return user.papeis?.length ? user.papeis : user.role ? [user.role] : []
+}
+
+/** Verdadeiro se o usuário tem **algum** dos papéis informados (multi-papel). */
+export function temPapel(
+  user: Pick<Usuario, "papeis" | "role"> | null | undefined,
+  ...papeis: Papel[]
+): boolean {
+  const conjunto = papeisDoUsuario(user)
+  return papeis.some((p) => conjunto.includes(p))
+}
+
+/**
  * Regra de acesso à trilha de auditoria (aba "Logs").
  *
  * Só a DIREÇÃO da clínica ou o superusuário técnico podem ver os logs — espelha
@@ -122,7 +145,7 @@ export interface Usuario {
  * rota e o menu lateral usarem a mesma regra.
  */
 export function podeVerLogs(user: Usuario | null | undefined): boolean {
-  return !!user && (user.role === "DIRECAO" || user.is_superuser)
+  return !!user && (temPapel(user, "DIRECAO") || user.is_superuser)
 }
 
 /** Credenciais enviadas para `POST /auth/login/`. */
