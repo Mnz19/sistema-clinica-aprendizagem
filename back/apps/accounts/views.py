@@ -25,8 +25,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.accounts.emails import enviar_convite
-from apps.accounts.models import Especialidade, LogAcesso
-from apps.accounts.permissions import IsSupervisao
+from apps.accounts.models import Especialidade, LogAcesso, Papel
+from apps.accounts.permissions import IsSupervisao, IsRecepcao
 from apps.accounts.serializers import (
     ConviteConfirmarSerializer,
     CustomTokenObtainPairSerializer,
@@ -237,6 +237,9 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
     Criação em dois modos: senha inicial (troca obrigatória no 1º acesso) ou
     convite por e-mail. A ação ``enviar-convite`` (re)envia o convite.
+    
+    RECEPCAO pode listar usuários (para preencher dropdown de profissionais no
+    agendamento) mas não pode criar, atualizar ou deletar.
     """
 
     queryset = (
@@ -248,6 +251,17 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     search_fields = ["nome", "email"]
     ordering_fields = ["nome", "email", "criado_em"]
     ordering = ["nome"]
+
+    def get_permissions(self):
+        """
+        RECEPCAO pode listar e recuperar usuários (para agendamentos), mas apenas
+        SUPERVISAO/DIRECAO pode criar, atualizar ou deletar.
+        """
+        if self.action in ["list", "retrieve"]:
+            # Permite leitura também a RECEPCAO (necessário para dropdown de profissionais)
+            return [IsRecepcao()]
+        # Escrita requer SUPERVISAO ou superior
+        return [IsSupervisao()]
 
     def perform_create(self, serializer):
         usuario = serializer.save()

@@ -72,6 +72,12 @@ class IsSupervisao(TemPapel):
     papeis_permitidos = (Papel.DIRECAO, Papel.SUPERVISAO)
 
 
+class IsSupervisaoOuRecepcao(TemPapel):
+    """Acesso restrito aos papéis DIREÇÃO, SUPERVISÃO e RECEPÇÃO."""
+
+    papeis_permitidos = (Papel.DIRECAO, Papel.SUPERVISAO, Papel.RECEPCAO)
+
+
 class IsRecepcao(TemPapel):
     """Acesso restrito aos papéis DIREÇÃO e RECEPÇÃO."""
 
