@@ -113,12 +113,19 @@ export default function AgendamentosListPage() {
   const agendamentosFiltrados = useMemo(() => {
     const termo = termoBusca.trim().toLowerCase()
     let lista = agendamentosPorPeriodo
-    if (filtroStatus) lista = lista.filter((a) => a.status === filtroStatus)
+    
+    // Se nenhum filtro de status foi selecionado explicitamente, excluir DESMARCADO
+    if (filtroStatus) {
+      lista = lista.filter((a) => a.status === filtroStatus)
+    } else {
+      lista = lista.filter((a) => a.status !== "DESMARCADO")
+    }
+    
     if (!termo) return lista
     return lista.filter((a) =>
       a.paciente_nome.toLowerCase().includes(termo)
     )
-  }, [agendamentosPorPeriodo, termoBusca])
+  }, [agendamentosPorPeriodo, termoBusca, filtroStatus])
 
   const agendamentoSelecionado = useMemo(
     () =>
@@ -190,7 +197,8 @@ export default function AgendamentosListPage() {
   const mensagemVazia =
     termoBusca.trim() && agendamentosPorPeriodo.length > 0
       ? "Nenhum agendamento encontrado para a busca."
-      : "Nenhum agendamento encontrado para o período selecionado."
+      : "Nenhum agendamento encontrado para o período selecionado." +
+        (!filtroStatus ? " (agendamentos desmarcados estão ocultos)" : "")
 
   return (
     <div className="space-y-6">
