@@ -2,7 +2,7 @@
  * Tipos do domínio de pacientes.
  *
  * Espelham o contrato da API do backend (`apps.pacientes`): cadastro do paciente,
- * responsáveis legais (estruturados) e anexos do cadastro.
+ * responsáveis legais (estruturados), anexos e notas fiscais do cadastro.
  */
 import type { Papel } from "@/types/auth"
 
@@ -94,6 +94,20 @@ export interface DocumentoPaciente {
   criado_em: string
 }
 
+/** Nota fiscal emitida para o paciente. */
+export interface NotaFiscalPaciente {
+  id: number
+  paciente: number
+  arquivo_url: string | null
+  nome_original: string
+  /** Data de emissão da nota (ISO `YYYY-MM-DD`). */
+  data_emissao: string
+  descricao: string
+  enviado_por: number | null
+  enviado_por_nome: string | null
+  criado_em: string
+}
+
 /** Item da listagem de pacientes (representação enxuta). */
 export interface PacienteListItem {
   id: number
@@ -138,6 +152,7 @@ export interface Paciente {
   profissionais_detalhe: ProfissionalResumo[]
   responsaveis: Responsavel[]
   documentos: DocumentoPaciente[]
+  notas_fiscais: NotaFiscalPaciente[]
   ativo: boolean
   criado_por: number | null
   criado_em: string

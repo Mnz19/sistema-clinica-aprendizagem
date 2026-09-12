@@ -50,6 +50,8 @@ import RouteErrorBoundary from "@/pages/errors/RouteErrorBoundary"
 import { PAPEIS_GESTORES } from "@/types/usuario"
 import { PAPEIS_CONFIG_WHATSAPP } from "@/types/whatsapp"
 import { PAPEIS_PRONTUARIO, PAPEIS_CONFIG_PRONTUARIO } from "@/types/prontuario"
+import { PAPEIS_PRODUCAO } from "@/types/producao"
+import { PAPEIS_RELATORIOS } from "@/types/relatorio"
 
 /** Envolve um elemento na área autenticada (guarda + layout principal). */
 function protegido(elemento: ReactNode) {
@@ -233,11 +235,19 @@ const router = createBrowserRouter([
       },
       {
         path: "/producao",
-        element: protegido(<ProducaoListPage />),
+        element: protegido(
+          <RequerPapel papeis={PAPEIS_PRODUCAO}>
+            <ProducaoListPage />
+          </RequerPapel>
+        ),
       },
       {
         path: "/relatorios",
-        element: protegido(<RelatoriosPage />),
+        element: protegido(
+          <RequerPapel papeis={PAPEIS_RELATORIOS}>
+            <RelatoriosPage />
+          </RequerPapel>
+        ),
       },
       {
         path: "/usuarios",

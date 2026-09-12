@@ -1,4 +1,4 @@
-"""Serializers do módulo de pacientes: cadastro, responsáveis e documentos."""
+"""Serializers do módulo de pacientes: cadastro, responsáveis, documentos e notas fiscais."""
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from drf_spectacular.utils import extend_schema_field
@@ -7,6 +7,7 @@ from rest_framework import serializers
 from apps.accounts.models import Papel
 from apps.pacientes.models import (
     DocumentoPaciente,
+    NotaFiscalPaciente,
     Paciente,
     Responsavel,
 )
@@ -107,6 +108,56 @@ class DocumentoPacienteSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class NotaFiscalPacienteSerializer(serializers.ModelSerializer):
+    """Nota fiscal do paciente (leitura + upload)."""
+
+    enviado_por_nome = serializers.CharField(
+        source="enviado_por.nome", read_only=True, default=None
+    )
+    arquivo_url = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_arquivo_url(self, obj):
+        request = self.context.get("request")
+        if obj.arquivo and hasattr(obj.arquivo, "url"):
+            url = obj.arquivo.url
+            return request.build_absolute_uri(url) if request else url
+        return None
+
+    class Meta:
+        model = NotaFiscalPaciente
+        fields = [
+            "id",
+            "paciente",
+            "arquivo",
+            "arquivo_url",
+            "nome_original",
+            "data_emissao",
+            "descricao",
+            "enviado_por",
+            "enviado_por_nome",
+            "criado_em",
+        ]
+        read_only_fields = [
+            "id",
+            "nome_original",
+            "enviado_por",
+            "enviado_por_nome",
+            "criado_em",
+        ]
+        extra_kwargs = {
+            "arquivo": {"write_only": True},
+            "paciente": {"required": True},
+            "data_emissao": {"required": True},
+        }
+
+    def create(self, validated_data):
+        arquivo = validated_data.get("arquivo")
+        if arquivo is not None and not validated_data.get("nome_original"):
+            validated_data["nome_original"] = arquivo.name
+        return super().create(validated_data)
+
+
 class PacienteListSerializer(serializers.ModelSerializer):
     """Representação enxuta para listagens de pacientes."""
 
@@ -139,6 +190,7 @@ class PacienteSerializer(serializers.ModelSerializer):
     )
     responsaveis = ResponsavelSerializer(many=True, required=False)
     documentos = DocumentoPacienteSerializer(many=True, read_only=True)
+    notas_fiscais = NotaFiscalPacienteSerializer(many=True, read_only=True)
 
     # Escrita por id; leitura detalhada em ``profissionais_detalhe``.
     profissionais = serializers.PrimaryKeyRelatedField(
@@ -186,6 +238,7 @@ class PacienteSerializer(serializers.ModelSerializer):
             "profissionais_detalhe",
             "responsaveis",
             "documentos",
+            "notas_fiscais",
             "ativo",
             "criado_por",
             "criado_em",

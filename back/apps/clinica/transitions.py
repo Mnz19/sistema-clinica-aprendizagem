@@ -3,6 +3,14 @@ Máquina de transições de status do Agendamento.
 
 Define quais papéis podem mover um agendamento de um status para outro.
 Função pura — sem acesso ao banco — usada pelo serializer de agendamento.
+
+Política atual (decisão da clínica): **o status é editável manualmente**. Entre
+os estados abertos (AGENDADO, PRE_CONFIRMADO, CONFIRMADO, EM_ATENDIMENTO) não há
+trava de papel nem de ordem — qualquer papel autenticado pode, por exemplo,
+mover AGENDADO → CONFIRMADO ou AGENDADO → EM_ATENDIMENTO direto. A única regra
+que permanece é que os estados finais (ATENDIDO, FALTA, DESMARCADO) são
+terminais: não têm transição de saída, porque são eles que alimentam o ledger de
+produção e o financeiro.
 """
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -13,41 +21,30 @@ from apps.clinica.models import StatusAgendamento
 # "qualquer" significa que qualquer papel autenticado pode executar a transição.
 _QUALQUER = frozenset(Papel.values)
 
-# O profissional (ou a direção) pode iniciar o atendimento — o cronômetro do
-# prontuário — mesmo que a recepção ainda não tenha confirmado a chegada. Por
-# isso ``EM_ATENDIMENTO`` é alcançável a partir de AGENDADO, PRE_CONFIRMADO e
-# CONFIRMADO. O timestamp em si é gravado pela action ``iniciar_atendimento``.
-_INICIA_ATENDIMENTO = frozenset([Papel.PROFISSIONAL, Papel.DIRECAO])
+# Estados abertos: o agendamento ainda está em andamento e pode ir para qualquer
+# outro status (inclusive voltar atrás) sem restrição de papel.
+STATUS_ABERTOS: tuple[str, ...] = (
+    StatusAgendamento.AGENDADO,
+    StatusAgendamento.PRE_CONFIRMADO,
+    StatusAgendamento.CONFIRMADO,
+    StatusAgendamento.EM_ATENDIMENTO,
+)
+
+# Estados finais: alimentam produção/financeiro e não têm transição de saída.
+STATUS_TERMINAIS: tuple[str, ...] = (
+    StatusAgendamento.ATENDIDO,
+    StatusAgendamento.FALTA,
+    StatusAgendamento.DESMARCADO,
+)
 
 TRANSICOES_PERMITIDAS: dict[str, dict[frozenset, list[str]]] = {
-    StatusAgendamento.AGENDADO: {
-        frozenset([Papel.RECEPCAO, Papel.DIRECAO]): [StatusAgendamento.PRE_CONFIRMADO],
-        _INICIA_ATENDIMENTO: [StatusAgendamento.EM_ATENDIMENTO],
-        _QUALQUER: [StatusAgendamento.DESMARCADO],
+    **{
+        origem: {
+            _QUALQUER: [destino for destino in StatusAgendamento.values if destino != origem]
+        }
+        for origem in STATUS_ABERTOS
     },
-    StatusAgendamento.PRE_CONFIRMADO: {
-        frozenset([Papel.PROFISSIONAL, Papel.DIRECAO]): [
-            StatusAgendamento.CONFIRMADO,
-            StatusAgendamento.EM_ATENDIMENTO,
-        ],
-        _QUALQUER: [StatusAgendamento.DESMARCADO],
-    },
-    StatusAgendamento.CONFIRMADO: {
-        frozenset([Papel.PROFISSIONAL, Papel.DIRECAO]): [
-            StatusAgendamento.EM_ATENDIMENTO,
-            StatusAgendamento.ATENDIDO,
-            StatusAgendamento.FALTA,
-        ],
-        _QUALQUER: [StatusAgendamento.DESMARCADO],
-    },
-    StatusAgendamento.EM_ATENDIMENTO: {
-        frozenset([Papel.PROFISSIONAL, Papel.DIRECAO]): [StatusAgendamento.ATENDIDO],
-        _QUALQUER: [StatusAgendamento.DESMARCADO],
-    },
-    # Estados terminais — nenhuma transição de saída
-    StatusAgendamento.ATENDIDO:    {},
-    StatusAgendamento.FALTA:       {},
-    StatusAgendamento.DESMARCADO:  {},
+    **{terminal: {} for terminal in STATUS_TERMINAIS},
 }
 
 
@@ -76,7 +73,8 @@ def validar_transicao(status_atual: str, status_novo: str, papeis) -> None:
     ``papeis`` pode ser um único papel (str) ou o conjunto de papéis do usuário
     (multi-papel): basta ter **algum** papel autorizado para a transição.
 
-    Lança ``ValidationError`` se a transição é inválida para qualquer papel.
+    Lança ``ValidationError`` se a transição é inválida para qualquer papel
+    (hoje, apenas saídas de estado terminal).
     Lança ``PermissionDenied`` se a transição é válida mas nenhum papel tem acesso.
     Não faz nada se status_atual == status_novo (nenhuma transição de fato).
     """

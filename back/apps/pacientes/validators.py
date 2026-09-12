@@ -1,8 +1,9 @@
 """
 Validadores do módulo de pacientes.
 
-- ``validar_cpf``     : valida um CPF (11 dígitos + dígitos verificadores).
-- ``validar_arquivo`` : limita tamanho e extensões dos anexos.
+- ``validar_cpf``                : valida um CPF (11 dígitos + dígitos verificadores).
+- ``validar_arquivo``            : limita tamanho e extensões dos anexos.
+- ``validar_arquivo_nota_fiscal``: idem, para os arquivos de nota fiscal (PDF/XML/imagem).
 """
 import re
 
@@ -13,6 +14,12 @@ EXTENSOES_PERMITIDAS = {
     ".pdf", ".doc", ".docx", ".odt", ".txt", ".rtf",
     ".jpg", ".jpeg", ".png", ".webp", ".heic",
     ".xls", ".xlsx", ".csv",
+}
+
+# Extensões aceitas para notas fiscais (PDF/imagem do DANFE ou o XML da NF-e).
+EXTENSOES_NOTA_FISCAL = {
+    ".pdf", ".xml",
+    ".jpg", ".jpeg", ".png", ".webp", ".heic",
 }
 
 # Tamanho máximo por arquivo (25 MB).
@@ -50,14 +57,24 @@ def validar_cpf(valor: str) -> None:
         raise ValidationError("CPF inválido.")
 
 
-def validar_arquivo(arquivo) -> None:
-    """Valida tamanho e extensão de um anexo enviado."""
+def _validar_upload(arquivo, extensoes: set) -> None:
+    """Valida tamanho e extensão de um arquivo enviado contra a lista informada."""
     import os
 
     if arquivo.size > TAMANHO_MAXIMO_BYTES:
         raise ValidationError("O arquivo excede o tamanho máximo de 25 MB.")
 
     ext = os.path.splitext(arquivo.name)[1].lower()
-    if ext not in EXTENSOES_PERMITIDAS:
-        permitidas = ", ".join(sorted(EXTENSOES_PERMITIDAS))
+    if ext not in extensoes:
+        permitidas = ", ".join(sorted(extensoes))
         raise ValidationError(f"Extensão não permitida. Use: {permitidas}.")
+
+
+def validar_arquivo(arquivo) -> None:
+    """Valida tamanho e extensão de um anexo enviado."""
+    _validar_upload(arquivo, EXTENSOES_PERMITIDAS)
+
+
+def validar_arquivo_nota_fiscal(arquivo) -> None:
+    """Valida tamanho e extensão do arquivo de uma nota fiscal."""
+    _validar_upload(arquivo, EXTENSOES_NOTA_FISCAL)

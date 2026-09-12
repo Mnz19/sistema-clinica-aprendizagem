@@ -1,10 +1,10 @@
-"""Testes de CRUD, acesso por papel, responsáveis e anexos de pacientes."""
+"""Testes de CRUD, acesso por papel, responsáveis, anexos e notas fiscais de pacientes."""
 import io
 
 import pytest
 from django.urls import reverse
 
-from apps.pacientes.models import DocumentoPaciente, Paciente
+from apps.pacientes.models import DocumentoPaciente, NotaFiscalPaciente, Paciente
 
 pytestmark = pytest.mark.django_db
 
@@ -237,3 +237,99 @@ def test_profissional_nao_anexa_em_paciente_alheio(cliente, prof_a, prof_b, cria
         format="multipart",
     )
     assert resp.status_code == 400  # paciente fora do queryset visível
+
+
+# --- Notas fiscais -----------------------------------------------------------
+
+def test_upload_nota_fiscal(cliente, direcao, cria_paciente):
+    paciente = cria_paciente()
+    api = cliente(direcao)
+    resp = api.post(
+        reverse("nota-fiscal-paciente-list"),
+        {
+            "paciente": paciente.id,
+            "arquivo": _arquivo_falso("nf-1234.pdf"),
+            "data_emissao": "2026-03-15",
+            "descricao": "NF 1234 — março/2026",
+        },
+        format="multipart",
+    )
+    assert resp.status_code == 201, resp.data
+    nota = NotaFiscalPaciente.objects.get(id=resp.data["id"])
+    assert nota.enviado_por == direcao
+    assert nota.nome_original == "nf-1234.pdf"
+    assert str(nota.data_emissao) == "2026-03-15"
+    assert resp.data["arquivo_url"]
+
+
+def test_nota_fiscal_exige_data_emissao(cliente, direcao, cria_paciente):
+    paciente = cria_paciente()
+    api = cliente(direcao)
+    resp = api.post(
+        reverse("nota-fiscal-paciente-list"),
+        {"paciente": paciente.id, "arquivo": _arquivo_falso("nf.pdf")},
+        format="multipart",
+    )
+    assert resp.status_code == 400
+    assert "data_emissao" in resp.data
+
+
+def test_nota_fiscal_aceita_xml_e_rejeita_extensao_invalida(cliente, direcao, cria_paciente):
+    paciente = cria_paciente()
+    api = cliente(direcao)
+    ok = api.post(
+        reverse("nota-fiscal-paciente-list"),
+        {
+            "paciente": paciente.id,
+            "arquivo": _arquivo_falso("nfe.xml", b"<nfeProc/>"),
+            "data_emissao": "2026-03-15",
+        },
+        format="multipart",
+    )
+    assert ok.status_code == 201, ok.data
+
+    invalido = api.post(
+        reverse("nota-fiscal-paciente-list"),
+        {
+            "paciente": paciente.id,
+            "arquivo": _arquivo_falso("nota.docx", b"PK"),
+            "data_emissao": "2026-03-15",
+        },
+        format="multipart",
+    )
+    assert invalido.status_code == 400
+
+
+def test_profissional_nao_anexa_nota_fiscal_em_paciente_alheio(
+    cliente, prof_a, prof_b, cria_paciente
+):
+    alheio = cria_paciente(profissionais=[prof_b])
+    api = cliente(prof_a)
+    resp = api.post(
+        reverse("nota-fiscal-paciente-list"),
+        {
+            "paciente": alheio.id,
+            "arquivo": _arquivo_falso("nf.pdf"),
+            "data_emissao": "2026-03-15",
+        },
+        format="multipart",
+    )
+    assert resp.status_code == 400  # paciente fora do queryset visível
+
+
+def test_detalhe_do_paciente_traz_notas_fiscais(cliente, direcao, cria_paciente):
+    paciente = cria_paciente()
+    api = cliente(direcao)
+    api.post(
+        reverse("nota-fiscal-paciente-list"),
+        {
+            "paciente": paciente.id,
+            "arquivo": _arquivo_falso("nf.pdf"),
+            "data_emissao": "2026-03-15",
+        },
+        format="multipart",
+    )
+    resp = api.get(reverse("paciente-detail", args=[paciente.id]))
+    assert resp.status_code == 200
+    assert len(resp.data["notas_fiscais"]) == 1
+    assert resp.data["notas_fiscais"][0]["data_emissao"] == "2026-03-15"

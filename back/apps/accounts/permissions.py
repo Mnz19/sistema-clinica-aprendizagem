@@ -88,3 +88,19 @@ class IsFinanceiro(TemPapel):
     """Acesso restrito aos papéis DIREÇÃO e FINANCEIRO."""
 
     papeis_permitidos = (Papel.DIRECAO, Papel.FINANCEIRO)
+
+
+class IsSuperAdmin(BasePermission):
+    """
+    Acesso restrito ao super admin técnico (``is_superuser``).
+
+    Diferente de ``IsDirecaoOuSuperuser``, a DIREÇÃO **não** passa: usada nas
+    ações destrutivas e irreversíveis (ex.: exclusão definitiva de agendamento),
+    onde o fluxo normal da clínica é o encerramento lógico por status.
+    """
+
+    message = "Apenas o super admin pode executar esta ação."
+
+    def has_permission(self, request, view):
+        usuario = request.user
+        return bool(usuario and usuario.is_authenticated and usuario.is_superuser)

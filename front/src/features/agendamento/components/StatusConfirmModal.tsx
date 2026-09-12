@@ -23,6 +23,8 @@ interface Props {
   novoStatus: StatusAgendamento | null
   salvando?: boolean
   erroParecer?: string | null
+  /** Erro que não pertence a um campo (403, 409 de sala ocupada, rede…). */
+  erroGeral?: string | null
   onConfirmar: (parecer?: string) => void
   onCancelar: () => void
 }
@@ -37,6 +39,7 @@ export function StatusConfirmModal({
   novoStatus,
   salvando = false,
   erroParecer = null,
+  erroGeral = null,
   onConfirmar,
   onCancelar,
 }: Props) {
@@ -117,6 +120,12 @@ export function StatusConfirmModal({
                 <p className="text-sm text-foreground">
                   Tem certeza que deseja alterar o status para{" "}
                   <strong>{rotuloStatus}</strong>?
+                </p>
+              )}
+
+              {erroGeral && (
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+                  {erroGeral}
                 </p>
               )}
             </div>

@@ -66,6 +66,7 @@ LOCAL_APPS = [
     "apps.financeiro",
     "apps.fila_espera",
     "apps.google_agenda.apps.GoogleAgendaConfig",
+    "apps.relatorios.apps.RelatoriosConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

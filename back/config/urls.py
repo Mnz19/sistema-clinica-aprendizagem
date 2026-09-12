@@ -68,6 +68,8 @@ urlpatterns = [
     path("api/", include("apps.fila_espera.urls")),
     # Integração com o Google Agenda (sincronização dos agendamentos)
     path("api/", include("apps.google_agenda.urls")),
+    # Aba de Relatórios (exportação .xlsx com filtros, restrita por papel)
+    path("api/", include("apps.relatorios.urls")),
 ]
 
 # Em desenvolvimento, o Django serve os arquivos de mídia (anexos) enviados.

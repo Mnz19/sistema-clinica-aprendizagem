@@ -7,6 +7,8 @@ Modelos do módulo de pacientes.
   base para contato e futura confirmação por WhatsApp.
 - ``DocumentoPaciente`` : anexos do cadastro (documentos pessoais, laudos,
   relatórios, encaminhamentos, etc.).
+- ``NotaFiscalPaciente``: notas fiscais emitidas para o paciente (arquivo + data
+  de emissão).
 
 Contexto LGPD: são dados pessoais/sensíveis de menores. Exclusão é lógica
 (``ativo=False``) para preservar histórico; o acesso é restrito por papel na
@@ -18,12 +20,21 @@ from django.conf import settings
 from django.db import models
 
 from apps.accounts.models import Papel
-from apps.pacientes.validators import validar_arquivo, validar_cpf
+from apps.pacientes.validators import (
+    validar_arquivo,
+    validar_arquivo_nota_fiscal,
+    validar_cpf,
+)
 
 
 def caminho_documento(instance, filename):
     """Define o caminho de upload do anexo, isolando por paciente."""
     return f"pacientes/{instance.paciente_id}/documentos/{filename}"
+
+
+def caminho_nota_fiscal(instance, filename):
+    """Define o caminho de upload da nota fiscal, isolando por paciente."""
+    return f"pacientes/{instance.paciente_id}/notas-fiscais/{filename}"
 
 
 class UF(models.TextChoices):
@@ -319,6 +330,46 @@ class DocumentoPaciente(models.Model):
         verbose_name = "Documento do paciente"
         verbose_name_plural = "Documentos do paciente"
         ordering = ["-criado_em"]
+
+    def __str__(self):
+        return self.nome_original or self.arquivo.name
+
+
+class NotaFiscalPaciente(models.Model):
+    """
+    Nota fiscal emitida para o paciente (arquivo + data de emissão).
+
+    Segue o mesmo modelo dos anexos do cadastro (``DocumentoPaciente``): vários
+    arquivos por paciente, com autoria e data de envio registradas.
+    """
+
+    paciente = models.ForeignKey(
+        Paciente,
+        on_delete=models.CASCADE,
+        related_name="notas_fiscais",
+        verbose_name="paciente",
+    )
+    arquivo = models.FileField(
+        "arquivo", upload_to=caminho_nota_fiscal, validators=[validar_arquivo_nota_fiscal]
+    )
+    nome_original = models.CharField("nome do arquivo", max_length=255, blank=True)
+    data_emissao = models.DateField("data de emissão", db_index=True)
+    descricao = models.CharField("descrição", max_length=255, blank=True)
+
+    enviado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="notas_fiscais_enviadas",
+        verbose_name="enviado por",
+    )
+    criado_em = models.DateTimeField("enviado em", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Nota fiscal do paciente"
+        verbose_name_plural = "Notas fiscais do paciente"
+        ordering = ["-data_emissao", "-criado_em"]
 
     def __str__(self):
         return self.nome_original or self.arquivo.name

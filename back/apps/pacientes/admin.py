@@ -1,7 +1,12 @@
 """Django Admin do módulo de pacientes."""
 from django.contrib import admin
 
-from apps.pacientes.models import DocumentoPaciente, Paciente, Responsavel
+from apps.pacientes.models import (
+    DocumentoPaciente,
+    NotaFiscalPaciente,
+    Paciente,
+    Responsavel,
+)
 
 
 class ResponsavelInline(admin.TabularInline):
@@ -15,6 +20,12 @@ class DocumentoPacienteInline(admin.TabularInline):
     readonly_fields = ["nome_original", "enviado_por", "criado_em"]
 
 
+class NotaFiscalPacienteInline(admin.TabularInline):
+    model = NotaFiscalPaciente
+    extra = 0
+    readonly_fields = ["nome_original", "enviado_por", "criado_em"]
+
+
 @admin.register(Paciente)
 class PacienteAdmin(admin.ModelAdmin):
     list_display = ["nome_completo", "data_nascimento", "cidade", "ativo", "atualizado_em"]
@@ -22,7 +33,7 @@ class PacienteAdmin(admin.ModelAdmin):
     search_fields = ["nome_completo", "cpf", "email"]
     filter_horizontal = ["profissionais"]
     readonly_fields = ["criado_por", "criado_em", "atualizado_em"]
-    inlines = [ResponsavelInline, DocumentoPacienteInline]
+    inlines = [ResponsavelInline, DocumentoPacienteInline, NotaFiscalPacienteInline]
     date_hierarchy = "criado_em"
 
 
@@ -39,3 +50,12 @@ class DocumentoPacienteAdmin(admin.ModelAdmin):
     list_filter = ["tipo"]
     search_fields = ["nome_original", "descricao", "paciente__nome_completo"]
     readonly_fields = ["nome_original", "enviado_por", "criado_em"]
+
+
+@admin.register(NotaFiscalPaciente)
+class NotaFiscalPacienteAdmin(admin.ModelAdmin):
+    list_display = ["nome_original", "data_emissao", "paciente", "enviado_por", "criado_em"]
+    list_filter = ["data_emissao"]
+    search_fields = ["nome_original", "descricao", "paciente__nome_completo"]
+    readonly_fields = ["nome_original", "enviado_por", "criado_em"]
+    date_hierarchy = "data_emissao"

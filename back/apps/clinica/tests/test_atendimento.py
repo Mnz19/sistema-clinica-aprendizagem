@@ -129,10 +129,11 @@ def test_iniciar_duas_vezes_retorna_400(api, prof_a, ag_confirmado):
     assert "já foi iniciado" in resp.data["detail"]
 
 
-def test_recepcao_nao_pode_iniciar(api, recepcao, ag_confirmado):
-    """RECEPCAO não tem papel para iniciar atendimento (PermissionDenied → 403)."""
+def test_recepcao_pode_iniciar(api, recepcao, ag_confirmado):
+    """Sem trava de papel: a RECEPÇÃO também pode iniciar o atendimento."""
     resp = api(recepcao).post(_url(ag_confirmado, "iniciar-atendimento"))
-    assert resp.status_code == 403
+    assert resp.status_code == 200
+    assert resp.data["status"] == "EM_ATENDIMENTO"
 
 
 def test_profissional_nao_inicia_de_outro(api, prof_b, ag_confirmado):

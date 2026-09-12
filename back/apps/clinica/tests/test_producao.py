@@ -2,7 +2,8 @@
 
 Os lançamentos de ``Producao`` são criados pelo signal ``post_save`` de
 ``Agendamento`` (ver ``test_signal_producao.py``). Aqui validamos apenas a
-exposição de leitura: filtros de período/profissional e isolamento por papel.
+exposição de leitura: filtros de período/profissional e o acesso restrito a
+FINANCEIRO/DIREÇÃO.
 """
 from datetime import date, time
 
@@ -34,7 +35,15 @@ def prof(cria_u): return cria_u("prof@c.com", Papel.PROFISSIONAL)
 
 
 @pytest.fixture
-def outro_prof(cria_u): return cria_u("prof2@c.com", Papel.PROFISSIONAL)
+def financeiro(cria_u): return cria_u("fin@c.com", Papel.FINANCEIRO)
+
+
+@pytest.fixture
+def recepcao(cria_u): return cria_u("rec@c.com", Papel.RECEPCAO)
+
+
+@pytest.fixture
+def supervisao(cria_u): return cria_u("sup@c.com", Papel.SUPERVISAO)
 
 
 @pytest.fixture
@@ -95,12 +104,18 @@ def test_filtro_por_periodo(api, direcao, agendamentos):
     assert resp.data[0]["motivo"] == "Falta do Paciente"
 
 
-def test_profissional_ve_apenas_a_propria_producao(api, prof, outro_prof, agendamentos):
-    """Isolamento por papel: PROFISSIONAL não enxerga produção de colegas."""
-    resp_dono = api(prof).get(URL)
-    assert resp_dono.status_code == 200
-    assert len(resp_dono.data) == 2
+def test_financeiro_ve_a_producao_da_clinica(api, financeiro, agendamentos):
+    """FINANCEIRO tem acesso à aba de produção."""
+    resp = api(financeiro).get(URL)
+    assert resp.status_code == 200
+    assert len(resp.data) == 2
 
-    resp_outro = api(outro_prof).get(URL)
-    assert resp_outro.status_code == 200
-    assert resp_outro.data == []
+
+@pytest.mark.parametrize(
+    "papel_fixture", ["prof", "recepcao", "supervisao"]
+)
+def test_somente_financeiro_e_direcao_acessam(api, request, agendamentos, papel_fixture):
+    """Demais papéis não enxergam a produção (403) — nem a própria."""
+    usuario = request.getfixturevalue(papel_fixture)
+    resp = api(usuario).get(URL)
+    assert resp.status_code == 403

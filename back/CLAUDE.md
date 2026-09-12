@@ -76,13 +76,24 @@ Instalação: `pip install -r requirements-dev.txt` (inclui `requirements.txt` +
   `/api/logs/`, somente leitura, restrita a DIREÇÃO ou `is_superuser`
   (`IsDirecaoOuSuperuser`). Não tem models próprios: a captura é global via
   `AUDITLOG_*` em `config/settings/base.py` (`AUDITLOG_INCLUDE_ALL_MODELS`).
+- `apps/relatorios/` — aba de **Relatórios** com exportação `.xlsx` (openpyxl).
+  Não tem models: lê os dados dos outros apps. Um módulo por relatório
+  (`relatorio_pacientes`, `relatorio_agendamentos`, `relatorio_producao`,
+  `relatorio_repasse`), cada um expondo `COLUNAS` + `montar(params)`; `excel.py`
+  é o único gerador de planilha, `filtros.py` valida a query string e
+  `permissions.py` define o acesso por papel. A mesma rota atende JSON (prévia)
+  e `?formato=xlsx` (download) a partir do mesmo queryset.
 
 ### Endpoints
 
 `/api/auth/`: `login/`, `refresh/`, `verify/`, `logout/` (blacklist), `me/`,
 `change-password/`, `password-reset/` e `password-reset/confirm/` (ambos **stubs**).
-`/api/usuarios/` (ViewSet **restrito a `DIRECAO`**). Fora de `/api`: `/admin/`,
-`/health/`, `/api/docs/`, `/api/redoc/`, `/api/schema/`.
+`/api/usuarios/` (ViewSet **restrito a `DIRECAO`**).
+`/api/relatorios/{pacientes,agendamentos,producao,repasse}/` — aba de
+Relatórios; aceitam `?formato=xlsx` para baixar a planilha. Acesso por papel:
+pacientes/agendamentos → DIREÇÃO, SUPERVISÃO e RECEPÇÃO; produção/repasse →
+DIREÇÃO e FINANCEIRO. Fora de `/api`: `/admin/`, `/health/`, `/api/docs/`,
+`/api/redoc/`, `/api/schema/`.
 
 ### Convenções não óbvias
 
@@ -103,6 +114,14 @@ Instalação: `pip install -r requirements-dev.txt` (inclui `requirements.txt` +
   manifesto para o `base`, senão o `runserver` quebra sem collectstatic.
 - `TIME_ZONE = "America/Belem"`, `LANGUAGE_CODE = "pt-br"`, `USE_TZ = True`. Respeite
   em lógica e testes de data/hora.
+- **Planilhas (`apps/relatorios/excel.py`)**: o openpyxl interpreta qualquer
+  string iniciada em `=` como **fórmula**. Toda célula de texto é forçada a
+  `data_type="s"` (`_escrever_celula_texto`) para evitar injeção de fórmula em
+  campo livre (nome, diagnóstico, observação). Não escreva em planilha sem
+  passar por esse gerador. Datetime vai para a célula no fuso do projeto e sem
+  `tzinfo` (o Excel não tem "datetime com fuso"); no JSON o offset é mantido.
+- Relatórios têm teto de linhas (`MAX_LINHAS_RELATORIO`): acima dele a API
+  devolve 400 pedindo um recorte menor, em vez de truncar em silêncio.
 - Comentários, docstrings e nomes de campo em **português** (`nome`, `criado_em`,
   `atualizado_em`). Mantenha esse padrão nos módulos novos.
 
@@ -119,8 +138,9 @@ Instalação: `pip install -r requirements-dev.txt` (inclui `requirements.txt` +
 
 ### O que NÃO fazer agora
 
-- Não criar módulos de paciente, agenda, sala, prontuário, consulta, relatórios ou
-  WhatsApp — só quando forem o escopo da tarefa.
+- Não criar módulos novos fora do escopo da tarefa. (Pacientes, agenda, sala,
+  prontuário, consulta, relatórios e WhatsApp **já existem** — estenda-os em vez
+  de recriar.)
 - Não implementar regras finas de permissão por papel além do necessário; use a base
   de `permissions.py`.
 - Não configurar deploy de produção real (o `prod.py` só deixa o ambiente preparado).

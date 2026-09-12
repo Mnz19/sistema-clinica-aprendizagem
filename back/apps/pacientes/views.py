@@ -3,6 +3,7 @@ Views do módulo de pacientes.
 
 - ``PacienteViewSet``           → /api/pacientes/          (CRUD do cadastro)
 - ``DocumentoPacienteViewSet``  → /api/documentos/         (anexos, upload multipart)
+- ``NotaFiscalPacienteViewSet`` → /api/notas-fiscais/      (notas fiscais, upload multipart)
 
 Controle de acesso (ver ``permissions.py``): o papel PROFISSIONAL só enxerga os
 pacientes aos quais está vinculado; DIREÇÃO, SUPERVISÃO e RECEPÇÃO enxergam todos.
@@ -13,10 +14,11 @@ from rest_framework import generics, viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
 
 from apps.accounts.models import Papel
-from apps.pacientes.models import DocumentoPaciente, Paciente
+from apps.pacientes.models import DocumentoPaciente, NotaFiscalPaciente, Paciente
 from apps.pacientes.permissions import PodeAcessarPacientes
 from apps.pacientes.serializers import (
     DocumentoPacienteSerializer,
+    NotaFiscalPacienteSerializer,
     PacienteListSerializer,
     PacienteSerializer,
     ProfissionalResumoSerializer,
@@ -78,7 +80,7 @@ class PacienteViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = _pacientes_visiveis(self.request.user).prefetch_related(
-            "profissionais", "responsaveis", "documentos"
+            "profissionais", "responsaveis", "documentos", "notas_fiscais"
         )
         # Por padrão, listagens mostram só pacientes ativos (a menos que ?ativo=false).
         if self.action == "list" and "ativo" not in self.request.query_params:
@@ -117,6 +119,40 @@ class DocumentoPacienteViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         pacientes = _pacientes_visiveis(self.request.user)
         return DocumentoPaciente.objects.filter(
+            paciente__in=pacientes
+        ).select_related("paciente", "enviado_por")
+
+    def get_serializer(self, *args, **kwargs):
+        serializer = super().get_serializer(*args, **kwargs)
+        # Só permite anexar a pacientes que o usuário pode enxergar.
+        campo = getattr(serializer, "fields", {}).get("paciente")
+        if campo is not None:
+            campo.queryset = _pacientes_visiveis(self.request.user)
+        return serializer
+
+    def perform_create(self, serializer):
+        serializer.save(enviado_por=self.request.user)
+
+
+class NotaFiscalPacienteViewSet(viewsets.ModelViewSet):
+    """
+    Notas fiscais do paciente (upload/download/remoção).
+
+    Upload via ``multipart/form-data`` (campos ``paciente``, ``arquivo``,
+    ``data_emissao``, ``descricao``). O acesso segue as mesmas regras de
+    visibilidade do paciente.
+    """
+
+    serializer_class = NotaFiscalPacienteSerializer
+    permission_classes = [PodeAcessarPacientes]
+    parser_classes = [MultiPartParser, FormParser]
+    filterset_fields = ["paciente", "data_emissao"]
+    ordering_fields = ["data_emissao", "criado_em"]
+    ordering = ["-data_emissao", "-criado_em"]
+
+    def get_queryset(self):
+        pacientes = _pacientes_visiveis(self.request.user)
+        return NotaFiscalPaciente.objects.filter(
             paciente__in=pacientes
         ).select_related("paciente", "enviado_por")
 

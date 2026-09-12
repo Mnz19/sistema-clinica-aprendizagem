@@ -3,6 +3,15 @@
  *
  * Espelham o contrato da API (`apps.clinica.Producao`) — somente leitura.
  */
+import type { Papel } from "@/types/auth"
+
+/**
+ * Papéis que podem ver a aba "Produção".
+ *
+ * A tela expõe o valor cobrado por atendimento de toda a clínica, então só o
+ * FINANCEIRO e a DIREÇÃO têm acesso — espelha a permissão do `ProducaoViewSet`.
+ */
+export const PAPEIS_PRODUCAO: Papel[] = ["FINANCEIRO", "DIRECAO"]
 
 /** Motivos gerados pelo signal de Agendamento. */
 export const MOTIVOS_PRODUCAO = {

@@ -10,13 +10,17 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AgendamentoAcoesMenu } from "@/features/agendamento/components/AgendamentoAcoesMenu"
 import { AgendamentoForm } from "@/features/agendamento/components/AgendamentoForm"
+import { ExcluirAgendamentoModal } from "@/features/agendamento/components/ExcluirAgendamentoModal"
 import { StatusConfirmModal } from "@/features/agendamento/components/StatusConfirmModal"
 import { TransferirAgendamentoModal } from "@/features/agendamento/components/TransferirAgendamentoModal"
 import { ConfirmacaoBadge } from "@/features/agendamento/utils/confirmacao"
 import { payloadAtualizacaoStatus } from "@/features/agendamento/utils/agendamentoPayload"
 import { formatarData, formatarHorario } from "@/utils/format"
-import { AgendamentoValidacaoError } from "@/services/agendamento"
+import { AgendamentoValidacaoError, iniciarAtendimento } from "@/services/agendamento"
+import { mensagemDeErro } from "@/utils/apiError"
 import { useAgendamentoStore } from "@/store/agendamentoStore"
+import { useAuth } from "@/hooks/useAuth"
+import { ehSuperAdmin } from "@/types/auth"
 import { Select } from "@/components/ui/select"
 import { STATUS_AGENDAMENTO, type Agendamento, type StatusAgendamento } from "@/types/agendamento"
 
@@ -75,6 +79,10 @@ export default function AgendamentosListPage() {
   const erro = useAgendamentoStore((s) => s.erro)
   const buscarAgendamentos = useAgendamentoStore((s) => s.buscarAgendamentos)
   const salvarAgendamento = useAgendamentoStore((s) => s.salvarAgendamento)
+  const removerAgendamento = useAgendamentoStore((s) => s.removerAgendamento)
+
+  const { user } = useAuth()
+  const podeExcluir = ehSuperAdmin(user)
 
   const [periodo, setPeriodo] = useState<PeriodoVisualizacao>("semana")
   const [termoBusca, setTermoBusca] = useState("")
@@ -85,7 +93,11 @@ export default function AgendamentosListPage() {
   const [statusModal, setStatusModal] = useState<StatusModalState | null>(null)
   const [salvandoStatus, setSalvandoStatus] = useState(false)
   const [erroParecerModal, setErroParecerModal] = useState<string | null>(null)
+  const [erroStatusModal, setErroStatusModal] = useState<string | null>(null)
   const [transferAgendamento, setTransferAgendamento] = useState<Agendamento | null>(null)
+  const [excluirAgendamento, setExcluirAgendamento] = useState<Agendamento | null>(null)
+  const [excluindo, setExcluindo] = useState(false)
+  const [erroExcluirModal, setErroExcluirModal] = useState<string | null>(null)
 
   const hoje = dataLocalISO()
   const inicioSemana = inicioSemanaISO()
@@ -153,6 +165,7 @@ export default function AgendamentosListPage() {
   function abrirStatusRapido(agendamento: Agendamento, novoStatus: StatusAgendamento) {
     if (agendamento.status === novoStatus) return
     setErroParecerModal(null)
+    setErroStatusModal(null)
     setStatusModal({ agendamento, novoStatus })
   }
 
@@ -160,6 +173,7 @@ export default function AgendamentosListPage() {
     if (salvandoStatus) return
     setStatusModal(null)
     setErroParecerModal(null)
+    setErroStatusModal(null)
   }
 
   async function confirmarStatusRapido(parecer?: string) {
@@ -167,14 +181,21 @@ export default function AgendamentosListPage() {
 
     setSalvandoStatus(true)
     setErroParecerModal(null)
+    setErroStatusModal(null)
 
     try {
-      const payload = payloadAtualizacaoStatus(
-        statusModal.agendamento,
-        statusModal.novoStatus,
-        parecer
-      )
-      await salvarAgendamento(payload, statusModal.agendamento.id)
+      if (statusModal.novoStatus === "EM_ATENDIMENTO") {
+        // Passa pela action dedicada para marcar o início do cronômetro e
+        // ocupar a sala — um PATCH de status não gravaria esses dados.
+        await iniciarAtendimento(statusModal.agendamento.id)
+      } else {
+        const payload = payloadAtualizacaoStatus(
+          statusModal.agendamento,
+          statusModal.novoStatus,
+          parecer
+        )
+        await salvarAgendamento(payload, statusModal.agendamento.id)
+      }
       await refetch()
       setStatusModal(null)
     } catch (err) {
@@ -182,7 +203,11 @@ export default function AgendamentosListPage() {
         const erroParecer = err.validacao.campos.parecer_status?.[0]
         if (erroParecer) {
           setErroParecerModal(erroParecer)
+        } else {
+          setErroStatusModal(err.validacao.mensagem)
         }
+      } else {
+        setErroStatusModal(mensagemDeErro(err, "Não foi possível alterar o status."))
       }
     } finally {
       setSalvandoStatus(false)
@@ -192,6 +217,33 @@ export default function AgendamentosListPage() {
   async function aoSalvarDrawer(_agendamento: Agendamento) {
     await refetch()
     fecharDrawer()
+  }
+
+  function abrirExclusao(agendamento: Agendamento) {
+    setErroExcluirModal(null)
+    setExcluirAgendamento(agendamento)
+  }
+
+  function fecharExclusao() {
+    if (excluindo) return
+    setExcluirAgendamento(null)
+    setErroExcluirModal(null)
+  }
+
+  async function confirmarExclusao() {
+    if (!excluirAgendamento) return
+
+    setExcluindo(true)
+    setErroExcluirModal(null)
+    try {
+      await removerAgendamento(excluirAgendamento.id)
+      await refetch()
+      setExcluirAgendamento(null)
+    } catch (err) {
+      setErroExcluirModal(mensagemDeErro(err, "Não foi possível excluir o agendamento."))
+    } finally {
+      setExcluindo(false)
+    }
   }
 
   const mensagemVazia =
@@ -325,6 +377,7 @@ export default function AgendamentosListPage() {
                       onVerEditar={abrirEdicao}
                       onStatusRapido={abrirStatusRapido}
                       onTransferir={setTransferAgendamento}
+                      onExcluir={podeExcluir ? abrirExclusao : undefined}
                     />
                   </td>
                 </tr>
@@ -365,8 +418,18 @@ export default function AgendamentosListPage() {
         novoStatus={statusModal?.novoStatus ?? null}
         salvando={salvandoStatus}
         erroParecer={erroParecerModal}
+        erroGeral={erroStatusModal}
         onConfirmar={confirmarStatusRapido}
         onCancelar={fecharStatusModal}
+      />
+
+      <ExcluirAgendamentoModal
+        open={excluirAgendamento != null}
+        agendamento={excluirAgendamento}
+        excluindo={excluindo}
+        erro={erroExcluirModal}
+        onConfirmar={confirmarExclusao}
+        onCancelar={fecharExclusao}
       />
 
       <TransferirAgendamentoModal

@@ -17,8 +17,6 @@ import {
   listarAgendamentos,
 } from "@/services/agendamento"
 import { atendimentoEmAndamento, type Agendamento } from "@/types/agendamento"
-import { useAuthStore } from "@/store/authStore"
-import { temPapel } from "@/types/auth"
 import { mensagemDeErro } from "@/utils/apiError"
 import { formatarCronometro, formatarDataHora, formatarHorario } from "@/utils/format"
 
@@ -63,10 +61,8 @@ function segundosDecorridos(agendamento: Agendamento, agora: number): number {
 }
 
 export function AtendimentoCard({ pacienteId }: Props) {
-  // Só PROFISSIONAL e DIRECAO podem iniciar/finalizar (espelha o backend);
-  // SUPERVISAO vê o estado/cronômetro em modo leitura.
-  const user = useAuthStore((s) => s.user)
-  const podeAgir = temPapel(user, "PROFISSIONAL", "DIRECAO")
+  // Sem trava de papel: quem abre o prontuário pode iniciar/finalizar o
+  // atendimento (o backend também não restringe mais a transição por papel).
 
   const [agendamento, setAgendamento] = useState<Agendamento | null>(null)
   const [carregando, setCarregando] = useState(true)
@@ -182,14 +178,14 @@ export function AtendimentoCard({ pacienteId }: Props) {
             </span>
           )}
 
-          {podeAgir && !emAndamento && !finalizado && (
+          {!emAndamento && !finalizado && (
             <Button onClick={aoIniciar} disabled={acaoEmCurso}>
               {acaoEmCurso ? <Loader2Icon className="size-4 animate-spin" /> : <PlayIcon className="size-4" />}
               Iniciar atendimento
             </Button>
           )}
 
-          {podeAgir && emAndamento && (
+          {emAndamento && (
             <Button variant="destructive" onClick={aoFinalizar} disabled={acaoEmCurso}>
               {acaoEmCurso ? <Loader2Icon className="size-4 animate-spin" /> : <SquareIcon className="size-4" />}
               Finalizar

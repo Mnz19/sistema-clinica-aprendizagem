@@ -148,6 +148,17 @@ export function podeVerLogs(user: Usuario | null | undefined): boolean {
   return !!user && (temPapel(user, "DIRECAO") || user.is_superuser)
 }
 
+/**
+ * Verdadeiro apenas para o super admin técnico (`is_superuser`).
+ *
+ * Espelha a permissão `IsSuperAdmin` do backend. Diferente de `podeVerLogs`, a
+ * DIREÇÃO **não** entra: usado nas ações destrutivas e irreversíveis, como a
+ * exclusão definitiva de um agendamento.
+ */
+export function ehSuperAdmin(user: Usuario | null | undefined): boolean {
+  return !!user && user.is_superuser
+}
+
 /** Credenciais enviadas para `POST /auth/login/`. */
 export interface LoginCredentials {
   email: string

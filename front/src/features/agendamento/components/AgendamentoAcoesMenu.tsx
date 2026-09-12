@@ -8,6 +8,8 @@ import {
   ClipboardCheckIcon,
   EyeIcon,
   MoreHorizontalIcon,
+  PlayCircleIcon,
+  Trash2Icon,
   UserXIcon,
 } from "lucide-react"
 
@@ -20,6 +22,8 @@ interface Props {
   onVerEditar: (agendamento: Agendamento) => void
   onStatusRapido: (agendamento: Agendamento, status: StatusAgendamento) => void
   onTransferir?: (agendamento: Agendamento) => void
+  /** Exclusão definitiva — só é passada para o super admin (`is_superuser`). */
+  onExcluir?: (agendamento: Agendamento) => void
 }
 
 /** Só faz sentido transferir agendamentos em aberto (regra do backend). */
@@ -41,6 +45,7 @@ export function AgendamentoAcoesMenu({
   onVerEditar,
   onStatusRapido,
   onTransferir,
+  onExcluir,
 }: Props) {
   const [aberto, setAberto] = useState(false)
   const [posicao, setPosicao] = useState({ top: 0, left: 0 })
@@ -124,6 +129,11 @@ export function AgendamentoAcoesMenu({
       separadorAntes: true,
     },
     {
+      rotulo: "Iniciar atendimento",
+      icone: PlayCircleIcon,
+      status: "EM_ATENDIMENTO",
+    },
+    {
       rotulo: "Marcar como atendido",
       icone: ClipboardCheckIcon,
       status: "ATENDIDO",
@@ -141,6 +151,20 @@ export function AgendamentoAcoesMenu({
       status: "DESMARCADO",
       destaque: "destructive",
     },
+    ...(onExcluir
+      ? [
+          {
+            rotulo: "Excluir agendamento",
+            icone: Trash2Icon,
+            separadorAntes: true,
+            destaque: "destructive",
+            onClick: () => {
+              setAberto(false)
+              onExcluir(agendamento)
+            },
+          } as ItemMenu,
+        ]
+      : []),
   ]
 
   function aoSelecionarItem(item: ItemMenu) {

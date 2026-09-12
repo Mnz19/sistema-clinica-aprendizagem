@@ -6,7 +6,7 @@ Views do módulo de clínica.
 - ``DisponibilidadeProfissionalViewSet`` → /api/disponibilidades/
 - ``AusenciaProfissionalViewSet``        → /api/ausencias/
 - ``AgendamentoViewSet``                 → /api/agendamentos/
-- ``ProducaoViewSet``                    → /api/producoes/ (somente leitura)
+- ``ProducaoViewSet``                    → /api/producoes/ (leitura, FINANCEIRO/DIREÇÃO)
 
 Todos exigem autenticação JWT. Salas, serviços, disponibilidades e ausências
 implementam exclusão lógica no ``destroy``; agendamentos usam o status
@@ -24,7 +24,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accounts.models import Papel
-from apps.accounts.permissions import tem_papel
+from apps.accounts.permissions import IsSuperAdmin, tem_papel
 from apps.auditoria.serializers import LogEntrySerializer
 from apps.clinica.models import StatusAgendamento as SA
 from apps.clinica.filters import ProducaoFilter
@@ -188,6 +188,19 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
     filterset_fields = ["data", "profissional", "sala", "paciente", "status"]
     ordering_fields = ["data", "horario_inicio", "criado_em", "atualizado_em"]
     ordering = ["data", "horario_inicio"]
+
+    def get_permissions(self):
+        """
+        A exclusão definitiva (``DELETE``) é privativa do super admin.
+
+        O fluxo normal da clínica encerra consultas com o status ``DESMARCADO``,
+        preservando o histórico e a produção. Apagar o registro do banco é uma
+        correção excepcional (ex.: agendamento criado por engano), por isso fica
+        restrita ao superusuário técnico — nem a DIREÇÃO tem acesso.
+        """
+        if self.action == "destroy":
+            return [IsAuthenticated(), IsSuperAdmin()]
+        return super().get_permissions()
 
     def get_queryset(self):
         qs = (
@@ -548,6 +561,10 @@ class ProducaoViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Consulta do ledger de produção (somente leitura).
 
+    Acesso restrito a FINANCEIRO e DIREÇÃO — a aba "Produção" expõe o valor
+    cobrado por atendimento de toda a clínica, então os demais papéis
+    (profissional, recepção, supervisão) não a enxergam.
+
     Filtros: ``?data__gte=``, ``?data__lte=``, ``?profissional=``, ``?paciente=``.
     Os lançamentos são criados/atualizados pelo signal ``post_save`` de
     ``Agendamento`` — não há create/update/delete pela API.
@@ -557,17 +574,10 @@ class ProducaoViewSet(viewsets.ReadOnlyModelViewSet):
         "agendamento", "paciente", "profissional"
     ).all()
     serializer_class = ProducaoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [tem_papel(Papel.FINANCEIRO, Papel.DIRECAO)]
     filterset_class = ProducaoFilter
     ordering_fields = ["data", "valor", "criado_em"]
     ordering = ["-data"]
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-        # Isolamento por papel: profissional "puro" vê apenas a própria produção.
-        if self.request.user.somente_profissional:
-            qs = qs.filter(profissional=self.request.user)
-        return qs
 
 
 class RelatorioProducaoViewSet(viewsets.ViewSet):

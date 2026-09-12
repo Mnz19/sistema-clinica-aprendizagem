@@ -27,3 +27,5 @@ google-auth-oauthlib==1.4.0
 google-api-python-client==2.199.0
 # Criptografia dos refresh tokens do Google guardados no banco (Fernet).
 cryptography==46.0.7
+# Geração das planilhas .xlsx da aba de Relatórios (exportação com filtros).
+openpyxl==3.1.5

@@ -66,6 +66,8 @@ import { useAuth } from "@/hooks/useAuth"
 
 import { PAPEIS_GESTORES } from "@/types/usuario"
 import { PAPEIS_PRONTUARIO, PAPEIS_CONFIG_PRONTUARIO } from "@/types/prontuario"
+import { PAPEIS_PRODUCAO } from "@/types/producao"
+import { PAPEIS_RELATORIOS } from "@/types/relatorio"
 import { PAPEIS_CONFIG_WHATSAPP } from "@/types/whatsapp"
 import { podeVerLogs, temPapel } from "@/types/auth"
 import type { Papel } from "@/types/auth"
@@ -82,8 +84,8 @@ const navItems: NavItem[] = [
   { label: "Dashboard", icon: Building2Icon, href: "/" },
   { label: "Ocupação", icon: LayoutGridIcon, href: "/ocupacao" },
   { label: "Pacientes", icon: UsersIcon, href: "/pacientes" },
-  { label: "Produção", icon: DollarSignIcon, href: "/producao" },
-  { label: "Relatórios", icon: ChartColumnIcon, href: "/relatorios" },
+  { label: "Produção", icon: DollarSignIcon, href: "/producao", papeis: PAPEIS_PRODUCAO },
+  { label: "Relatórios", icon: ChartColumnIcon, href: "/relatorios", papeis: PAPEIS_RELATORIOS },
   { label: "Prontuários", icon: FileTextIcon, href: "/prontuarios", papeis: PAPEIS_PRONTUARIO },
 ]
 

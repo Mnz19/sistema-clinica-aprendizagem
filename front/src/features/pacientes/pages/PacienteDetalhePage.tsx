@@ -43,6 +43,7 @@ import {
   reativarPaciente,
 } from "@/services/pacientes"
 import { DocumentosPanel } from "@/features/pacientes/components/DocumentosPanel"
+import { NotasFiscaisPanel } from "@/features/pacientes/components/NotasFiscaisPanel"
 
 function Info({ rotulo, valor }: { rotulo: string; valor?: string | null }) {
   return (
@@ -324,6 +325,20 @@ export default function PacienteDetalhePage() {
           <DocumentosPanel
             pacienteId={paciente.id}
             documentos={paciente.documentos}
+            onAlterado={carregar}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Notas fiscais */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Notas fiscais</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <NotasFiscaisPanel
+            pacienteId={paciente.id}
+            notasFiscais={paciente.notas_fiscais}
             onAlterado={carregar}
           />
         </CardContent>

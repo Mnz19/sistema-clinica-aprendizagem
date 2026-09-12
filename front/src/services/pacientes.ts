@@ -4,11 +4,13 @@
  * Endpoints:
  *   GET/POST/PATCH/DELETE `/pacientes/`      → cadastro
  *   GET/POST/DELETE       `/documentos/`     → anexos (upload multipart)
+ *   GET/POST/DELETE       `/notas-fiscais/`  → notas fiscais (upload multipart)
  *   GET                   `/profissionais/`  → profissionais disponíveis p/ vínculo
  */
 import { api } from "@/services/api"
 import type {
   DocumentoPaciente,
+  NotaFiscalPaciente,
   Paciente,
   PacienteListItem,
   PacientePayload,
@@ -112,4 +114,28 @@ export async function enviarDocumento(input: {
 /** Remove um anexo do paciente. */
 export async function removerDocumento(id: number): Promise<void> {
   await api.delete(`/documentos/${id}/`)
+}
+
+/** Envia uma nota fiscal (multipart) para o paciente. */
+export async function enviarNotaFiscal(input: {
+  paciente: number
+  arquivo: File
+  data_emissao: string
+  descricao?: string
+}): Promise<NotaFiscalPaciente> {
+  const form = new FormData()
+  form.append("paciente", String(input.paciente))
+  form.append("arquivo", input.arquivo)
+  form.append("data_emissao", input.data_emissao)
+  if (input.descricao) form.append("descricao", input.descricao)
+
+  const { data } = await api.post<NotaFiscalPaciente>("/notas-fiscais/", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  })
+  return data
+}
+
+/** Remove uma nota fiscal do paciente. */
+export async function removerNotaFiscal(id: number): Promise<void> {
+  await api.delete(`/notas-fiscais/${id}/`)
 }

@@ -177,28 +177,36 @@ def test_profissional_confirma_apos_pre_confirmacao(api, prof_a, ag_prof_a, rece
     assert resp.status_code == 200
 
 
-def test_profissional_nao_confirma_sem_pre_confirmacao(api, prof_a, ag_prof_a):
-    """SCHED-05/AC1: AGENDADO → CONFIRMADO é transição inválida para qualquer papel → 400."""
-    # SPEC_DEVIATION: spec pede 403, mas AGENDADO→CONFIRMADO não é uma transição válida
-    # para nenhum papel (estado intermediário PRE_CONFIRMADO é obrigatório), portanto
-    # a implementação retorna 400 (ValidationError) com lista de transições válidas.
+def test_confirma_direto_de_agendado(api, prof_a, ag_prof_a):
+    """Status manual: AGENDADO → CONFIRMADO direto, sem passar por PRE_CONFIRMADO."""
     resp = api(prof_a).patch(
         reverse("agendamento-detail", args=[ag_prof_a.id]),
         {"status": StatusAgendamento.CONFIRMADO}, format="json",
     )
-    assert resp.status_code == 400
-    assert "status" in resp.data
+    assert resp.status_code == 200
+    assert resp.data["status"] == StatusAgendamento.CONFIRMADO
 
 
-def test_recepcao_nao_pode_confirmar(api, recepcao, ag_prof_a):
-    """SCHED-04/AC2: RECEPCAO não pode mover PRE_CONFIRMADO → CONFIRMADO."""
+def test_recepcao_pode_confirmar(api, recepcao, ag_prof_a):
+    """Sem trava de papel: a RECEPÇÃO também confirma o agendamento."""
     ag_prof_a.status = StatusAgendamento.PRE_CONFIRMADO
     ag_prof_a.save()
     resp = api(recepcao).patch(
         reverse("agendamento-detail", args=[ag_prof_a.id]),
         {"status": StatusAgendamento.CONFIRMADO}, format="json",
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 200
+    assert resp.data["status"] == StatusAgendamento.CONFIRMADO
+
+
+def test_recepcao_pode_colocar_em_atendimento(api, recepcao, ag_prof_a):
+    """Sem trava: AGENDADO → EM_ATENDIMENTO manual, por qualquer papel."""
+    resp = api(recepcao).patch(
+        reverse("agendamento-detail", args=[ag_prof_a.id]),
+        {"status": StatusAgendamento.EM_ATENDIMENTO}, format="json",
+    )
+    assert resp.status_code == 200
+    assert resp.data["status"] == StatusAgendamento.EM_ATENDIMENTO
 
 
 def test_estado_terminal_nao_transita(api, direcao, ag_prof_a):
@@ -420,3 +428,41 @@ def test_cancelar_serie_sem_serie_retorna_400(api, recepcao, ag_prof_a):
         format="json",
     )
     assert resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Exclusão definitiva — restrita ao SUPER ADMIN (is_superuser)
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def super_admin(db, django_user_model):
+    return django_user_model.objects.create_superuser(
+        email="root@c.com", password=SENHA, nome="Root"
+    )
+
+
+def test_super_admin_exclui_agendamento(api, super_admin, ag_prof_a):
+    """Só o superusuário técnico pode apagar o agendamento do banco."""
+    resp = api(super_admin).delete(reverse("agendamento-detail", args=[ag_prof_a.id]))
+
+    assert resp.status_code == 204
+    assert not Agendamento.objects.filter(id=ag_prof_a.id).exists()
+
+
+@pytest.mark.parametrize("papel", [Papel.DIRECAO, Papel.RECEPCAO, Papel.PROFISSIONAL])
+def test_nao_super_admin_nao_exclui_agendamento(api, cria_usuario, ag_prof_a, papel):
+    """DIRECAO/RECEPCAO/PROFISSIONAL recebem 403 e o agendamento permanece."""
+    usuario = cria_usuario(f"{papel.lower()}@del.com", papel, "User")
+
+    resp = api(usuario).delete(reverse("agendamento-detail", args=[ag_prof_a.id]))
+
+    assert resp.status_code == 403
+    assert Agendamento.objects.filter(id=ag_prof_a.id).exists()
+
+
+def test_profissional_dono_nao_exclui_proprio_agendamento(api, prof_a, ag_prof_a):
+    """Ser dono do agendamento não libera a exclusão definitiva."""
+    resp = api(prof_a).delete(reverse("agendamento-detail", args=[ag_prof_a.id]))
+
+    assert resp.status_code == 403
+    assert Agendamento.objects.filter(id=ag_prof_a.id).exists()
