@@ -4,6 +4,15 @@
 #   1) build das imagens Docker (backend e frontend) e push para o GHCR;
 #   2) deploy na VPS via SSH: `docker compose pull && up -d` em /opt/clinica.
 #
+# O deploy fixa a TAG pelo SHA do commit (não `latest`), para que o `up -d`
+# recrie os containers e para que dê para saber exatamente o que está rodando.
+#
+# DOCKER_CONFIG isolado (/opt/clinica/.docker): a VPS hospeda outros sistemas e
+# o deploy de um deles grava um token efêmero do GHCR em /root/.docker/config.json.
+# Quando esse token expira, qualquer `docker pull` da VM passa a falhar com
+# "denied" — inclusive o nosso. Com config próprio, este stack não depende (nem
+# interfere) na credencial compartilhada do root.
+#
 # O CMD da imagem backend roda `migrate` + `collectstatic` no start, então o
 # recreate do container aplica as migrações automaticamente (banco = Postgres
 # NATIVO da VPS, acessado via host.docker.internal).
@@ -79,14 +88,49 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Short SHA
+        id: vars
+        run: echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
       - name: Deploy na VPS (SSH)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
+          # Aborta a sessão SSH no primeiro comando que falhar: sem isto, um
+          # `pull` quebrado seguia para o `up -d` (que apenas constatava os
+          # containers antigos "Running") e o job terminava verde sem ter
+          # atualizado nada.
+          script_stop: true
+          envs: IMAGE_TAG
           script: |
+            set -euo pipefail
+            export DOCKER_CONFIG=/opt/clinica/.docker
+            # Vence o IMAGE_TAG=latest do .env (env do shell tem precedência no Compose).
+            export IMAGE_TAG="$IMAGE_TAG"
             cd /opt/clinica
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d
-            docker image prune -f
+            # Confere que os containers estão mesmo na imagem deste commit.
+            for c in clinica-backend clinica-nginx; do
+              img=$(docker inspect -f '{{.Config.Image}}' "$c")
+              case "$img" in
+                *:"$IMAGE_TAG") echo "ok: $c → $img" ;;
+                *) echo "FALHA: $c está em $img, esperado :$IMAGE_TAG" >&2; exit 1 ;;
+              esac
+            done
+        env:
+          IMAGE_TAG: ${{ steps.vars.outputs.sha }}
+
+      - name: Smoke test (HTTP)
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" https://app.clinicadaaprendizagem.com.br/ || true)
+            [ "$code" = "200" ] && echo "app respondendo HTTP 200" && exit 0
+            echo "tentativa $i: HTTP $code — aguardando..."
+            sleep 6
+          done
+          echo "app não respondeu 200 após o deploy" >&2
+          exit 1
