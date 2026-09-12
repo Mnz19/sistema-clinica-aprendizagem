@@ -103,7 +103,11 @@ jobs:
           # containers antigos "Running") e o job terminava verde sem ter
           # atualizado nada.
           script_stop: true
-          envs: IMAGE_TAG
+          envs: IMAGE_TAG,IMAGE_BACKEND,IMAGE_FRONTEND
+          # ATENÇÃO: com `script_stop: true` o drone-ssh insere um `set -e` ENTRE
+          # cada linha do script. Isso despedaça qualquer bloco multilinha
+          # (`for`, `if`, `case`) e resulta em "syntax error near unexpected
+          # token". Mantenha um comando por linha aqui.
           script: |
             set -euo pipefail
             export DOCKER_CONFIG=/opt/clinica/.docker
@@ -113,13 +117,9 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d
             # Confere que os containers estão mesmo na imagem deste commit.
-            for c in clinica-backend clinica-nginx; do
-              img=$(docker inspect -f '{{.Config.Image}}' "$c")
-              case "$img" in
-                *:"$IMAGE_TAG") echo "ok: $c → $img" ;;
-                *) echo "FALHA: $c está em $img, esperado :$IMAGE_TAG" >&2; exit 1 ;;
-              esac
-            done
+            docker inspect -f '{{.Name}} => {{.Config.Image}}' clinica-backend clinica-nginx
+            test "$(docker inspect -f '{{.Config.Image}}' clinica-backend)" = "$IMAGE_BACKEND:$IMAGE_TAG"
+            test "$(docker inspect -f '{{.Config.Image}}' clinica-nginx)" = "$IMAGE_FRONTEND:$IMAGE_TAG"
         env:
           IMAGE_TAG: ${{ steps.vars.outputs.sha }}
 
