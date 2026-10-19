@@ -13,55 +13,46 @@
       .card-padding { padding: 32px 24px !important; }
       .titulo { font-size: 22px !important; line-height: 30px !important; }
     }
-    a { color: #0f766e; }
+    a { color: #8A6A22; }
   </style>
 </head>
-<body style="margin:0; padding:0; background-color:#f4f4f5; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+<body style="margin:0; padding:0; background-color:#FAF8F3; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
   {# Preheader: texto de prévia exibido na caixa de entrada, invisível no corpo. #}
-  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#f4f4f5;">
+  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#FAF8F3;">
     {% block preheader %}{% endblock %}&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
   </div>
 
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAF8F3;">
     <tr>
       <td align="center" style="padding:40px 16px;">
         <table role="presentation" class="container" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px; max-width:560px;">
 
-          {# Marca #}
+          {# Marca: logo dourada sobre o preto quente da identidade visual #}
           <tr>
-            <td align="center" style="padding-bottom:24px;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td width="40" height="40" align="center" valign="middle" style="width:40px; height:40px; background-color:#18181b; border-radius:10px; font-family:Arial, Helvetica, sans-serif; font-size:15px; font-weight:bold; color:#ffffff; letter-spacing:0.5px;">
-                    CA
-                  </td>
-                  <td style="padding-left:12px; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:17px; font-weight:600; color:#18181b;">
-                    {{ marca }}
-                  </td>
-                </tr>
-              </table>
+            <td align="center" bgcolor="#17130C" style="background-color:#17130C; border-radius:16px 16px 0 0; padding:28px 24px;">
+              <img src="{{ logo_url }}" width="220" alt="{{ marca }}" style="display:block; border:0; outline:none; width:220px; max-width:70%; height:auto;">
             </td>
           </tr>
 
           {# Cartão principal #}
           <tr>
-            <td style="background-color:#ffffff; border:1px solid #e4e4e7; border-radius:16px; overflow:hidden;">
+            <td style="background-color:#ffffff; border:1px solid #ECE5D6; border-top:0; border-radius:0 0 16px 16px; overflow:hidden;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td height="4" style="height:4px; line-height:4px; font-size:0; background-color:#14b8a6; background-image:linear-gradient(90deg, #14b8a6, #6366f1); border-radius:16px 16px 0 0;">&nbsp;</td>
+                  <td height="4" style="height:4px; line-height:4px; font-size:0; background-color:#C9A24A; background-image:linear-gradient(90deg, #8A6A22, #E8CB7E 50%, #8A6A22);">&nbsp;</td>
                 </tr>
                 <tr>
-                  <td class="card-padding" style="padding:40px 40px 36px; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#3f3f46;">
-                    <p style="margin:0 0 8px; font-size:12px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:#0f766e;">
+                  <td class="card-padding" style="padding:40px 40px 36px; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#3D3426;">
+                    <p style="margin:0 0 8px; font-size:12px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:#8A6A22;">
                       {% block rotulo %}{% endblock %}
                     </p>
-                    <h1 class="titulo" style="margin:0 0 20px; font-size:24px; line-height:32px; font-weight:700; color:#18181b;">
+                    <h1 class="titulo" style="margin:0 0 20px; font-size:24px; line-height:32px; font-weight:700; color:#1F1A12;">
                       {% block titulo %}{% endblock %}
                     </h1>
                     {% block conteudo %}{% endblock %}
-                    <p style="margin:28px 0 0; font-size:15px; line-height:24px; color:#3f3f46;">
+                    <p style="margin:28px 0 0; font-size:15px; line-height:24px; color:#3D3426;">
                       Com carinho,<br>
-                      <strong style="color:#18181b;">Equipe {{ marca }}</strong>
+                      <strong style="color:#1F1A12;">Equipe {{ marca }}</strong>
                     </p>
                   </td>
                 </tr>
@@ -71,7 +62,7 @@
 
           {# Rodapé #}
           <tr>
-            <td align="center" style="padding:24px 24px 0; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; line-height:18px; color:#a1a1aa;">
+            <td align="center" style="padding:24px 24px 0; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; line-height:18px; color:#8C806B;">
               {% block motivo %}Você recebeu este e-mail porque possui acesso ao sistema da {{ marca }}.{% endblock %}<br>
               Esta é uma mensagem automática — por favor, não responda.<br><br>
               &copy; {{ ano }} {{ marca }}

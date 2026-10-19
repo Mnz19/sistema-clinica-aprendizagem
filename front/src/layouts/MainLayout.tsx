@@ -16,7 +16,6 @@ import {
   ChartColumnIcon,
   UsersIcon,
   FileTextIcon,
-  ActivityIcon,
   ShieldCheckIcon,
   ScrollTextIcon,
   MessageCircleIcon,
@@ -109,6 +108,14 @@ const configuracoesSubItems: NavItem[] = [
   { label: "Logs", icon: ScrollTextIcon, href: "/logs", somenteSuperadmin: true },
 ]
 
+// Destaques do menu lateral (fundo preto quente): o item da rota atual ganha o
+// dourado da marca; o grupo que contém a rota ativa só fica em branco, para não
+// competir com o subitem destacado.
+const ITEM_ATIVO =
+  "data-active:bg-sidebar-primary data-active:font-semibold data-active:text-sidebar-primary-foreground data-active:[&>svg]:text-sidebar-primary-foreground"
+const GRUPO_ATIVO =
+  "data-active:bg-transparent data-active:text-sidebar-accent-foreground data-active:hover:bg-sidebar-accent"
+
 function NavContent() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -140,21 +147,20 @@ function NavContent() {
   return (
       <>
         {/* Marca / Logo */}
-        <SidebarHeader className="px-4 py-6">
-          <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-zinc-900 text-white">
-              <ActivityIcon className="size-5" />
-            </div>
-            <div className="flex flex-col gap-0.5 leading-none">
-              <span className="font-semibold tracking-tight">Clínica da Aprendizagem</span>
-              <span className="text-xs text-muted-foreground">Corem Software Solutions</span>
-            </div>
-          </div>
+        <SidebarHeader className="items-center gap-4 px-4 pt-6 pb-2">
+          <NavLink to="/" className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
+            <img
+              src="/logo.webp"
+              alt="Clínica da Aprendizagem — Christiane Menezes | Alexandra Negrão"
+              className="h-auto w-48"
+            />
+          </NavLink>
+          <div aria-hidden className="filete-dourado h-px w-full opacity-60" />
         </SidebarHeader>
 
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs uppercase tracking-wider">
+            <SidebarGroupLabel className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-brand-gold">
               Menu Principal
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -167,7 +173,7 @@ function NavContent() {
                           <SidebarMenuButton
                             tooltip={item.label}
                             isActive={isActive}
-                            className={isActive ? "font-medium text-zinc-900" : "text-zinc-500"}
+                            className={ITEM_ATIVO}
                           >
                             <item.icon className="size-4" />
                             <span>{item.label}</span>
@@ -182,9 +188,7 @@ function NavContent() {
                           tooltip="Gestão de Agenda"
                           isActive={agendaAtiva}
                           onClick={() => setAgendaAberta((aberta) => !aberta)}
-                          className={
-                            agendaAtiva ? "font-medium text-zinc-900" : "text-zinc-500"
-                          }
+                          className={GRUPO_ATIVO}
                         >
                           <CalendarIcon className="size-4" />
                           <span>Gestão de Agenda</span>
@@ -203,9 +207,7 @@ function NavContent() {
                                   {({ isActive }) => (
                                     <SidebarMenuSubButton
                                       isActive={isActive}
-                                      className={
-                                        isActive ? "font-medium text-zinc-900" : "text-zinc-500"
-                                      }
+                                      className={ITEM_ATIVO}
                                     >
                                       <sub.icon className="size-4" />
                                       <span>{sub.label}</span>
@@ -227,9 +229,7 @@ function NavContent() {
                       tooltip="Configurações"
                       isActive={configuracoesAtiva}
                       onClick={() => setConfigAberta((aberta) => !aberta)}
-                      className={
-                        configuracoesAtiva ? "font-medium text-zinc-900" : "text-zinc-500"
-                      }
+                      className={GRUPO_ATIVO}
                     >
                       <SettingsIcon className="size-4" />
                       <span>Configurações</span>
@@ -248,9 +248,7 @@ function NavContent() {
                               {({ isActive }) => (
                                 <SidebarMenuSubButton
                                   isActive={isActive}
-                                  className={
-                                    isActive ? "font-medium text-zinc-900" : "text-zinc-500"
-                                  }
+                                  className={ITEM_ATIVO}
                                 >
                                   <sub.icon className="size-4" />
                                   <span>{sub.label}</span>
@@ -270,25 +268,28 @@ function NavContent() {
 
         {/* Perfil do Usuário / Footer */}
         <SidebarFooter className="p-4">
-          <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-2">
+          <div className="flex items-center justify-between rounded-lg border border-sidebar-border bg-sidebar-accent/60 p-2">
             <button
               type="button"
               onClick={() => navigate("/perfil")}
-              className="flex items-center gap-2 overflow-hidden rounded-md text-left transition-opacity hover:opacity-80"
+              className="flex items-center gap-2 overflow-hidden rounded-md text-left outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
               title="Meu perfil"
             >
-              <Avatar nome={user?.nome} foto={user?.foto} className="bg-zinc-200 text-zinc-600" />
+              <Avatar nome={user?.nome} foto={user?.foto} className="bg-brand-gold text-brand-ink" />
               <div className="flex flex-col overflow-hidden">
-              <span className="truncate text-sm font-medium leading-tight text-zinc-900">
+              <span className="truncate text-sm font-medium leading-tight text-white">
                 {user?.nome ?? "Usuário"}
               </span>
-                <span className="truncate text-xs leading-tight text-zinc-500">
+                <span className="truncate text-xs leading-tight text-sidebar-foreground">
                 {user?.email ?? ""}
               </span>
               </div>
             </button>
             <AlertDialog>
-              <AlertDialogTrigger className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600">
+              <AlertDialogTrigger
+                title="Sair do sistema"
+                className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-sidebar-foreground outline-none transition-colors hover:bg-red-500/15 hover:text-red-300 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+              >
                 <LogOutIcon className="size-4" />
                 <span className="sr-only">Sair</span>
               </AlertDialogTrigger>
@@ -301,7 +302,7 @@ function NavContent() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleLogout} className="bg-red-600 text-white hover:bg-red-700">
+                  <AlertDialogAction onClick={handleLogout} className="bg-destructive text-white hover:bg-destructive/90">
                     Sair do sistema
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -330,24 +331,24 @@ export default function MainLayout({ children }: MainLayoutProps) {
   return (
       <SidebarProvider>
         {/* Desktop sidebar */}
-        <Sidebar className="hidden md:flex border-r border-zinc-200 bg-zinc-50/50">
+        <Sidebar className="hidden md:flex">
           <NavContent />
         </Sidebar>
 
-        <SidebarInset className="flex min-w-0 flex-col bg-white">
+        <SidebarInset className="flex min-w-0 flex-col bg-canvas">
           {/* Top header focado em Contexto e Ferramentas */}
-          <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 md:px-6">
+          <header className="relative flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur md:px-6">
             <div className="flex items-center gap-3">
-              <SidebarTrigger className="hidden md:inline-flex text-zinc-500 hover:text-zinc-900" />
+              <SidebarTrigger className="hidden md:inline-flex text-muted-foreground hover:text-foreground" />
 
               <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
-                <SheetTrigger className="md:hidden flex size-9 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900">
+                <SheetTrigger className="md:hidden flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   <MenuIcon className="size-5" />
                   <span className="sr-only">Abrir menu</span>
                 </SheetTrigger>
                 <SheetContent
                   side="left"
-                  className="w-72 max-w-[85vw] border-r border-zinc-200 bg-zinc-50 p-0"
+                  className="w-72 max-w-[85vw] border-r border-sidebar-border bg-sidebar p-0 text-sidebar-foreground *:data-[slot=sheet-close]:text-sidebar-foreground *:data-[slot=sheet-close]:hover:bg-sidebar-accent *:data-[slot=sheet-close]:hover:text-white"
                 >
                   <div className="flex h-full flex-col">
                     <NavContent />
@@ -355,13 +356,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 </SheetContent>
               </Sheet>
 
-              <Separator orientation="vertical" className="h-5 hidden md:block bg-zinc-200" />
+              <Separator orientation="vertical" className="h-5 hidden md:block" />
 
               {/* Espaço reservado para Breadcrumbs (ex: Dashboard > Agenda) */}
-              <span className="text-sm font-medium text-zinc-900">
+              <span className="text-sm font-medium text-foreground">
               Área de Trabalho
             </span>
             </div>
+
+            {/* Monograma no mobile, onde o menu lateral fica recolhido. */}
+            <img src="/logo-monograma.webp" alt="" aria-hidden className="size-8 md:hidden" />
+            <div aria-hidden className="filete-dourado absolute inset-x-0 -bottom-px h-px opacity-70" />
           </header>
 
           {/* Page content */}

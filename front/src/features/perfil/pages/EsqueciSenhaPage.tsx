@@ -39,16 +39,16 @@ export default function EsqueciSenhaPage() {
   }
 
   return (
-    <Card className="w-full max-w-md border-none shadow-2xl">
+    <Card className="w-full max-w-md border-none shadow-xl shadow-brand-ink/5">
       <CardHeader className="items-center space-y-3 text-center">
-        <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 text-white shadow-inner">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-brand-ink text-brand-gold-light ring-1 ring-brand-gold/30">
           {enviado ? <MailCheckIcon className="size-6" /> : <KeyRoundIcon className="size-6" />}
         </div>
         <div className="space-y-1">
-          <CardTitle className="text-2xl font-bold tracking-tight text-zinc-900">
+          <CardTitle className="font-heading text-3xl font-semibold text-foreground">
             {enviado ? "Confira seu e-mail" : "Esqueceu a senha?"}
           </CardTitle>
-          <CardDescription className="font-medium text-zinc-500">
+          <CardDescription>
             {enviado
               ? "Se o e-mail estiver cadastrado, você vai receber um link para criar uma nova senha."
               : "Informe seu e-mail e enviaremos um link para você criar uma nova senha."}
@@ -59,8 +59,8 @@ export default function EsqueciSenhaPage() {
       <CardContent>
         {enviado ? (
           <div className="space-y-4">
-            <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
-              Enviamos para <strong className="text-zinc-900">{email.trim()}</strong>. O link
+            <div className="rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+              Enviamos para <strong className="text-foreground">{email.trim()}</strong>. O link
               vale por tempo limitado e pode ser usado uma única vez. Não chegou? Verifique a
               caixa de spam.
             </div>
@@ -77,18 +77,18 @@ export default function EsqueciSenhaPage() {
             {erro && (
               <div
                 role="alert"
-                className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
               >
                 {erro}
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-zinc-700">E-mail corporativo</Label>
+              <Label htmlFor="email">E-mail corporativo</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="voce@clinicadaaprendizagem.com.br"
-                className="bg-zinc-50"
+                className="h-10"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={enviando}
@@ -100,7 +100,7 @@ export default function EsqueciSenhaPage() {
             <Button
               type="submit"
               disabled={enviando}
-              className="w-full bg-zinc-900 text-white hover:bg-zinc-800"
+              className="h-10 w-full"
             >
               {enviando && <Loader2Icon className="size-4 animate-spin" />}
               Enviar link de redefinição
@@ -109,10 +109,10 @@ export default function EsqueciSenhaPage() {
         )}
       </CardContent>
 
-      <CardFooter className="mt-2 flex justify-center border-t border-zinc-100 pt-4">
+      <CardFooter className="mt-2 flex justify-center border-t pt-4">
         <Link
           to="/login"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
         >
           <ArrowLeftIcon className="size-4" />
           Voltar para o login

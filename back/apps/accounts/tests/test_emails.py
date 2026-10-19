@@ -125,6 +125,16 @@ def test_convite_sai_em_html_com_link_e_remetente(api_client, direcao, cria_usua
     assert "/convite?uid=" in html
 
 
+def test_email_traz_logo_absoluta_do_frontend(api_client, direcao, cria_usuario, settings):
+    settings.FRONTEND_URL = "https://app.clinica.test/"
+    convidado = cria_usuario(email="logo@clinica.com", nome="Ana Lima")
+    api_client.force_authenticate(user=direcao)
+
+    api_client.post(reverse("usuario-enviar-convite", args=[convidado.pk]))
+
+    assert 'src="https://app.clinica.test/logo-email.png"' in _html(mail.outbox[0])
+
+
 def test_convite_com_falha_no_envio_responde_503(api_client, direcao, cria_usuario, monkeypatch):
     def falha(usuario):
         raise RuntimeError("Resend fora do ar")

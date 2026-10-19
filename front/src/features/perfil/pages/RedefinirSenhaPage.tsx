@@ -51,16 +51,16 @@ export default function RedefinirSenhaPage() {
   }
 
   return (
-    <Card className="w-full max-w-md border-none shadow-2xl">
+    <Card className="w-full max-w-md border-none shadow-xl shadow-brand-ink/5">
       <CardHeader className="items-center space-y-3 text-center">
-        <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 text-white shadow-inner">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-brand-ink text-brand-gold-light ring-1 ring-brand-gold/30">
           {sucesso ? <CheckCircle2Icon className="size-6" /> : <KeyRoundIcon className="size-6" />}
         </div>
         <div className="space-y-1">
-          <CardTitle className="text-2xl font-bold tracking-tight text-zinc-900">
+          <CardTitle className="font-heading text-3xl font-semibold text-foreground">
             {sucesso ? "Senha redefinida!" : "Crie uma nova senha"}
           </CardTitle>
-          <CardDescription className="font-medium text-zinc-500">
+          <CardDescription>
             {sucesso
               ? "Por segurança, encerramos as sessões abertas. Entre com a nova senha."
               : "Escolha uma senha forte, que você ainda não tenha usado aqui."}
@@ -71,14 +71,14 @@ export default function RedefinirSenhaPage() {
       <CardContent>
         {sucesso ? (
           <Button
-            className="w-full bg-zinc-900 text-white hover:bg-zinc-800"
+            className="h-10 w-full"
             onClick={() => navigate("/login", { replace: true })}
           >
             Ir para o login
           </Button>
         ) : linkInvalido ? (
           <div className="space-y-4">
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
               Link de redefinição inválido ou incompleto.
             </div>
             <Link
@@ -93,7 +93,7 @@ export default function RedefinirSenhaPage() {
             {erro && (
               <div
                 role="alert"
-                className="space-y-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                className="space-y-1 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
               >
                 <p>{erro}</p>
                 <Link to="/esqueci-senha" className="font-medium underline">
@@ -102,11 +102,11 @@ export default function RedefinirSenhaPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="nova-senha" className="text-zinc-700">Nova senha</Label>
+              <Label htmlFor="nova-senha">Nova senha</Label>
               <Input
                 id="nova-senha"
                 type="password"
-                className="bg-zinc-50"
+                className="h-10"
                 value={novaSenha}
                 onChange={(e) => setNovaSenha(e.target.value)}
                 disabled={salvando}
@@ -116,11 +116,11 @@ export default function RedefinirSenhaPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmacao" className="text-zinc-700">Confirmar nova senha</Label>
+              <Label htmlFor="confirmacao">Confirmar nova senha</Label>
               <Input
                 id="confirmacao"
                 type="password"
-                className="bg-zinc-50"
+                className="h-10"
                 value={confirmacao}
                 onChange={(e) => setConfirmacao(e.target.value)}
                 disabled={salvando}
@@ -131,7 +131,7 @@ export default function RedefinirSenhaPage() {
             <Button
               type="submit"
               disabled={salvando}
-              className="w-full bg-zinc-900 text-white hover:bg-zinc-800"
+              className="h-10 w-full"
             >
               {salvando && <Loader2Icon className="size-4 animate-spin" />}
               Salvar nova senha

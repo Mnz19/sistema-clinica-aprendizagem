@@ -53,10 +53,12 @@ export default function ImpressaoAtestadoPage() {
         </Button>
       </div>
 
-      <header className="border-b border-zinc-300 pb-4 text-center">
-        <h1 className="text-xl font-bold">Fontes Comportamentais</h1>
+      <header className="border-b border-brand-gold/60 pb-4 text-center">
+        <h1>
+          <img src="/logo.webp" alt="Clínica da Aprendizagem" className="mx-auto h-auto w-48" />
+        </h1>
         {atestado.titulo && (
-          <h2 className="mt-4 text-lg font-semibold uppercase tracking-wide">{atestado.titulo}</h2>
+          <h2 className="mt-4 font-heading text-lg font-semibold uppercase tracking-wide">{atestado.titulo}</h2>
         )}
       </header>
 

@@ -60,10 +60,17 @@ class TestGestaoUsuarios:
         resp = cliente_autenticado.get(reverse("usuario-list"))
         assert resp.status_code == 403
 
-    def test_recepcao_nao_pode_listar_usuarios(self, api_client, cria_usuario):
+    def test_recepcao_lista_usuarios_mas_nao_cria(self, api_client, cria_usuario):
+        """RECEPÇÃO lista a equipe (dropdown de profissionais no agendamento), sem gerir."""
         recep = cria_usuario(email="rec@clinica.com", role=Papel.RECEPCAO)
         api_client.force_authenticate(user=recep)
-        assert api_client.get(reverse("usuario-list")).status_code == 403
+        assert api_client.get(reverse("usuario-list")).status_code == 200
+        resp = api_client.post(
+            reverse("usuario-list"),
+            {"nome": "X", "email": "x@clinica.com", "role": Papel.RECEPCAO, "password": SENHA_PADRAO},
+            format="json",
+        )
+        assert resp.status_code == 403
 
     def test_anonimo_nao_pode_criar_usuario(self, api_client):
         resp = api_client.post(reverse("usuario-list"), {}, format="json")

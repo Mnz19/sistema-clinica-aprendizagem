@@ -280,7 +280,6 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="cancelar-serie")
     def cancelar_serie(self, request, pk=None):
         """POST /api/agendamentos/{id}/cancelar-serie/ — cancela todas as ocorrências futuras da série."""
-        import datetime
         agendamento = self.get_object()
 
         if not agendamento.serie_id:
@@ -296,7 +295,9 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        hoje = datetime.date.today()
+        # Data no fuso da clínica (America/Belem): o container roda em UTC e
+        # date.today() viraria o dia seguinte após as 21h, pulando sessões de hoje.
+        hoje = timezone.localdate()
         futuras = Agendamento.objects.filter(
             serie=agendamento.serie,
             data__gte=hoje,

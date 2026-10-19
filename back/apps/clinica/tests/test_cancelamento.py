@@ -13,9 +13,20 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.accounts.models import Papel
 from apps.clinica.models import Agendamento, StatusAgendamento as SA
+from apps.pacientes.models import Paciente
 
 
 pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture
+def paciente(db):
+    return Paciente.objects.create(nome_completo="Paciente Teste", data_nascimento="2015-01-01")
+
+
+@pytest.fixture
+def sala(cria_sala):
+    return cria_sala()
 
 
 def test_desmarcar_agendamento_requer_parecer(api_client, profissional, paciente, sala, cria_servico):

@@ -37,7 +37,7 @@ from apps.accounts.emails import (
     enviar_redefinicao_senha,
 )
 from apps.accounts.models import Especialidade, LogAcesso, Papel
-from apps.accounts.permissions import IsSupervisao, IsRecepcao
+from apps.accounts.permissions import IsSupervisao, IsSupervisaoOuRecepcao
 from apps.accounts.serializers import (
     ConviteConfirmarSerializer,
     CustomTokenObtainPairSerializer,
@@ -310,12 +310,12 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """
-        RECEPCAO pode listar e recuperar usuários (para agendamentos), mas apenas
-        SUPERVISAO/DIRECAO pode criar, atualizar ou deletar.
+        Leitura (list/retrieve) para DIREÇÃO, SUPERVISÃO e RECEPÇÃO — a recepção
+        precisa do dropdown de profissionais no agendamento. Escrita só para
+        DIREÇÃO/SUPERVISÃO.
         """
         if self.action in ["list", "retrieve"]:
-            # Permite leitura também a RECEPCAO (necessário para dropdown de profissionais)
-            return [IsRecepcao()]
+            return [IsSupervisaoOuRecepcao()]
         # Escrita requer SUPERVISAO ou superior
         return [IsSupervisao()]
 

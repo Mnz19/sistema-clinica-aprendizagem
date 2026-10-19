@@ -7,6 +7,7 @@ import { KeyRoundIcon, Loader2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import AuthLayout from "@/layouts/AuthLayout"
 import {
   Card,
   CardContent,
@@ -51,14 +52,14 @@ export default function TrocarSenhaObrigatoriaPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md shadow-lg">
+    <AuthLayout>
+      <Card className="w-full max-w-md border-none shadow-xl shadow-brand-ink/5">
         <CardHeader className="items-center space-y-3 text-center">
-          <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 text-white">
+          <div className="flex size-12 items-center justify-center rounded-xl bg-brand-ink text-brand-gold-light ring-1 ring-brand-gold/30">
             <KeyRoundIcon className="size-6" />
           </div>
           <div className="space-y-1">
-            <CardTitle className="text-xl">Defina uma nova senha</CardTitle>
+            <CardTitle className="font-heading text-2xl font-semibold text-foreground">Defina uma nova senha</CardTitle>
             <CardDescription>
               Por segurança, você precisa trocar a senha inicial antes de continuar.
             </CardDescription>
@@ -108,6 +109,6 @@ export default function TrocarSenhaObrigatoriaPage() {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   )
 }

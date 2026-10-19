@@ -1,13 +1,23 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+/* Tipografia: Fraunces (serifada de alto contraste, eixo de tamanho óptico)
+   nos títulos e Plus Jakarta Sans no texto corrido. */
+@import "@fontsource-variable/fraunces/opsz.css";
+@import "@fontsource-variable/plus-jakarta-sans";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
+    --font-heading: 'Fraunces Variable', Georgia, serif;
+    --font-sans: 'Plus Jakarta Sans Variable', system-ui, sans-serif;
+    /* Paleta da logo (dourado + preto quente) — usar para acentos pontuais. */
+    --color-brand-gold: var(--brand-gold);
+    --color-brand-gold-light: var(--brand-gold-light);
+    --color-brand-gold-deep: var(--brand-gold-deep);
+    --color-brand-ink: var(--brand-ink);
+    --color-brand-cream: var(--brand-cream);
+    --color-canvas: var(--canvas);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,73 +58,88 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Paleta Clínica da Aprendizagem (logo): dourado #C9A24A / #E8CB7E sobre
+ * preto quente #17130C, com fundos brancos e marfim.
+ * Todos os pares texto/fundo abaixo passam WCAG AA (≥ 4,5:1). O dourado médio
+ * tem contraste baixo sobre branco (2,9:1), então o primário em telas claras
+ * usa o dourado-bronze (#8A6A22, 5:1 com texto branco).
+ */
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
+    --brand-gold: #C9A24A;
+    --brand-gold-light: #E8CB7E;
+    --brand-gold-deep: #8A6A22;
+    --brand-ink: #17130C;
+    --brand-cream: #F6EFDF;
+    --canvas: #FAF8F3; /* fundo da área de trabalho, atrás dos cards */
+
+    --background: #FFFFFF;
+    --foreground: #1F1A12;
+    --card: #FFFFFF;
+    --card-foreground: #1F1A12;
+    --popover: #FFFFFF;
+    --popover-foreground: #1F1A12;
+    --primary: #8A6A22;
+    --primary-foreground: #FFFFFF;
+    --secondary: #F6EFDF;
+    --secondary-foreground: #5E4815;
+    --muted: #F4F0E7;
+    --muted-foreground: #6E6250;
+    --accent: #FBF5E6;
+    --accent-foreground: #5E4815;
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --border: #ECE5D6;
+    --input: #DDD3BF;
+    --ring: #A88433;
+    --chart-1: #8A6A22;
+    --chart-2: #C9A24A;
+    --chart-3: #E8CB7E;
+    --chart-4: #4A3F2E;
+    --chart-5: #B8AC94;
+    --radius: 0.75rem;
+    --sidebar: #17130C;
+    --sidebar-foreground: #D9CDB4;
+    --sidebar-primary: #D4AF5A;
+    --sidebar-primary-foreground: #17130C;
+    --sidebar-accent: #2A2418;
+    --sidebar-accent-foreground: #FFFFFF;
+    --sidebar-border: #3A3122;
+    --sidebar-ring: #D4AF5A;
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
+    --canvas: #0F0C08;
+    --background: #17130C;
+    --foreground: #F3EDE0;
+    --card: #1F1A12;
+    --card-foreground: #F3EDE0;
+    --popover: #1F1A12;
+    --popover-foreground: #F3EDE0;
+    --primary: #D4AF5A;
+    --primary-foreground: #17130C;
+    --secondary: #2A2418;
+    --secondary-foreground: #F3EDE0;
+    --muted: #2A2418;
+    --muted-foreground: #B8AC94;
+    --accent: #2A2418;
+    --accent-foreground: #F3EDE0;
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    --border: rgb(255 255 255 / 10%);
+    --input: rgb(255 255 255 / 15%);
+    --ring: #C9A24A;
+    --chart-1: #D4AF5A;
+    --chart-2: #E8CB7E;
+    --chart-3: #A88433;
+    --chart-4: #B8AC94;
+    --chart-5: #F6EFDF;
+    --sidebar: #0F0C08;
+    --sidebar-foreground: #D9CDB4;
+    --sidebar-primary: #D4AF5A;
+    --sidebar-primary-foreground: #17130C;
+    --sidebar-accent: #241E14;
+    --sidebar-accent-foreground: #FFFFFF;
+    --sidebar-border: rgb(255 255 255 / 10%);
+    --sidebar-ring: #D4AF5A;
 }
 
 @layer base {
@@ -122,12 +147,27 @@
     @apply border-border outline-ring/50;
     }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     }
   html {
     @apply font-sans;
     }
+  /* Títulos de página na serifada da marca. */
+  h1, .font-heading {
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
+    }
+  ::selection {
+    background-color: color-mix(in oklab, var(--brand-gold-light) 55%, transparent);
+    color: var(--foreground);
+    }
 }
+
+/* Filete dourado (gradiente da logo) para destaques pontuais. */
+.filete-dourado {
+  background-image: linear-gradient(90deg, transparent, var(--brand-gold) 20%, var(--brand-gold-light) 50%, var(--brand-gold) 80%, transparent);
+}
+
 /* Conteúdo rico dos registros do prontuário (editor e exibição). */
 .prose-registro { line-height: 1.55; }
 .prose-registro p { margin: 0 0 0.5rem; }
@@ -148,18 +188,25 @@
   --fc-border-color: var(--border);
   --fc-page-bg-color: var(--card);
   --fc-neutral-bg-color: var(--muted);
-  --fc-today-bg-color: color-mix(in oklab, var(--primary) 10%, transparent);
+  --fc-today-bg-color: color-mix(in oklab, var(--brand-cream) 70%, transparent);
   --fc-event-border-color: transparent;
   --fc-now-indicator-color: var(--destructive);
   font-family: var(--font-sans);
 }
 .fc .fc-toolbar-title {
-  font-size: 1rem !important;
+  font-family: var(--font-heading);
+  font-size: 1.1rem !important;
   font-weight: 600;
 }
 .fc .fc-button-primary {
   background-color: var(--primary);
   border-color: var(--primary);
+}
+.fc .fc-button-primary:disabled {
+  background-color: var(--secondary);
+  border-color: var(--secondary);
+  color: var(--secondary-foreground);
+  opacity: 1;
 }
 .fc .fc-button-primary:not(:disabled).fc-button-active,
 .fc .fc-button-primary:not(:disabled):active {

@@ -51,12 +51,7 @@ def gerar_datas(data_inicio: date, frequencia: str, data_fim: date) -> list[date
 
     while atual <= data_fim:
         datas.append(atual)
-        if frequencia == Frequencia.SEMANAL:
-            atual = atual + timedelta(weeks=1)
-        elif frequencia == Frequencia.QUINZENAL:
-            atual = atual + timedelta(weeks=2)
-        else:  # MENSAL
-            atual = _proximo_mes(atual)
+        atual = proxima_ocorrencia(atual, frequencia)
 
     if len(datas) > MAX_OCORRENCIAS:
         raise ValidationError(
@@ -69,6 +64,15 @@ def gerar_datas(data_inicio: date, frequencia: str, data_fim: date) -> list[date
         )
 
     return datas
+
+
+def proxima_ocorrencia(d: date, frequencia: str) -> date:
+    """Data da ocorrência seguinte a ``d`` na frequência informada."""
+    if frequencia == Frequencia.SEMANAL:
+        return d + timedelta(weeks=1)
+    if frequencia == Frequencia.QUINZENAL:
+        return d + timedelta(weeks=2)
+    return _proximo_mes(d)  # MENSAL
 
 
 def _proximo_mes(d: date) -> date:
@@ -89,12 +93,13 @@ def criar_serie(
     Cria uma SerieRecorrente e gera todas as ocorrências a partir do agendamento_origem.
 
     O próprio agendamento_origem NÃO é incluído na série (já existe).
-    As datas geradas começam no dia SEGUINTE ao agendamento_origem.data.
+    As datas geradas começam UM PERÍODO após a origem (ex.: semanal → origem + 7
+    dias), mantendo o mesmo dia da semana/do mês do agendamento original.
 
     Returns:
         (criados, nao_criados) onde nao_criados é lista de {"data": date, "motivo": str}.
     """
-    data_inicio = agendamento_origem.data + timedelta(days=1)
+    data_inicio = proxima_ocorrencia(agendamento_origem.data, frequencia)
 
     # gerar_datas levanta ValidationError se data_fim inválida ou > MAX_OCORRENCIAS
     # Ajusta: se data_inicio > data_fim retorna lista vazia sem erro

@@ -25,7 +25,6 @@ export default function NotFoundPage() {
             variant="outline"
             size="lg"
             onClick={() => navigate(-1)}
-            className="border-zinc-200"
           >
             <ArrowLeftIcon />
             Voltar
@@ -33,7 +32,6 @@ export default function NotFoundPage() {
           <Button
             size="lg"
             onClick={() => navigate("/")}
-            className="bg-zinc-900 text-white hover:bg-zinc-800"
           >
             <HouseIcon />
             Ir para o início

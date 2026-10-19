@@ -393,7 +393,7 @@ def test_cancelar_ocorrencia_nao_afeta_serie(api, recepcao, ag_prof_a):
         assert ag.status == StatusAgendamento.AGENDADO, f"ag {ag_id} foi cancelado indevidamente"
 
 
-def test_cancelar_serie_completa(api, recepcao, ag_prof_a):
+def test_cancelar_serie_completa(api, recepcao, ag_prof_a, monkeypatch):
     """SCHED-05/AC5: POST cancelar-serie/ desmarca todas as ocorrências futuras."""
     # Cria série
     resp_serie = api(recepcao).post(
@@ -404,7 +404,9 @@ def test_cancelar_serie_completa(api, recepcao, ag_prof_a):
     assert resp_serie.status_code == 201
     ids_criados = [a["id"] for a in resp_serie.data["criados"]]
 
-    # Cancela toda a série a partir do agendamento de origem
+    # Cancela toda a série a partir do agendamento de origem, "hoje" = dia da origem
+    # (a view só desmarca ocorrências de hoje em diante).
+    monkeypatch.setattr("django.utils.timezone.localdate", lambda *a, **k: ag_prof_a.data)
     resp_cancel = api(recepcao).post(
         reverse("agendamento-cancelar-serie", args=[ag_prof_a.id]),
         {"parecer_status": "Terapeuta em licença."},

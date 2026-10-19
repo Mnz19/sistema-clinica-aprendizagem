@@ -23,6 +23,8 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 SEGUNDOS_POR_HORA = 60 * 60
+# Logo servida pelo frontend (``front/public``); e-mail exige URL absoluta.
+LOGO_EMAIL = "logo-email.png"
 
 
 def gerar_uid_token(usuario):
@@ -61,6 +63,7 @@ def _enviar_template(nome_template: str, assunto: str, usuario, contexto: dict):
         "marca": settings.EMAIL_MARCA_NOME,
         "ano": timezone.localdate().year,
         "nome": _primeiro_nome(usuario),
+        "logo_url": _url_frontend(LOGO_EMAIL),
         **contexto,
     }
     texto = render_to_string(f"emails/{nome_template}.txt", contexto_completo)

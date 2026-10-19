@@ -70,9 +70,11 @@ export default function ImpressaoProntuarioPage() {
         </Button>
       </div>
 
-      <header className="border-b border-zinc-300 pb-4">
-        <h1 className="text-xl font-bold">Clínica da Aprendizagem</h1>
-        <p className="text-sm text-zinc-500">Prontuário eletrônico</p>
+      <header className="border-b border-brand-gold/60 pb-4">
+        <div className="flex items-center justify-between gap-4">
+          <img src="/logo.webp" alt="Clínica da Aprendizagem" className="h-auto w-40" />
+          <h1 className="font-heading text-lg font-semibold text-brand-gold-deep">Prontuário eletrônico</h1>
+        </div>
         <div className="mt-3 grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
           <div><strong>Paciente:</strong> {paciente.nome_completo}</div>
           <div>

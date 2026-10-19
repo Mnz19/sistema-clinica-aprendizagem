@@ -58,7 +58,7 @@ function FiltroMultiplo({
           >
             <input
               type="checkbox"
-              className="size-3.5 rounded border-border accent-zinc-900"
+              className="size-3.5 rounded border-border accent-primary"
               checked={selecionados.includes(opcao.valor)}
               onChange={() => onToggle(opcao.valor)}
             />

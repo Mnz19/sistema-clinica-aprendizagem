@@ -1,6 +1,5 @@
 import type { ReactNode } from "react"
 import type { LucideIcon } from "lucide-react"
-import { ActivityIcon } from "lucide-react"
 
 interface ErrorScreenProps {
   /** Código HTTP em destaque (ex.: "404", "500"). */
@@ -29,44 +28,41 @@ export default function ErrorScreen({
   actions,
 }: ErrorScreenProps) {
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-zinc-50 px-6 py-16 text-center">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-canvas px-6 py-16 text-center">
       {/* Brilho decorativo de fundo */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,var(--color-zinc-200)_0%,transparent_70%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,var(--color-brand-cream)_0%,transparent_70%)]"
       />
 
       {/* Código gigante, fantasma, atrás do conteúdo */}
       <span
         aria-hidden
-        className="pointer-events-none absolute select-none text-[13rem] font-black leading-none tracking-tighter text-zinc-900/4 sm:text-[18rem]"
+        className="pointer-events-none absolute select-none text-[13rem] font-black leading-none tracking-tighter text-brand-gold/10 sm:text-[18rem]"
       >
         {code}
       </span>
 
       <div className="relative z-10 flex w-full max-w-md flex-col items-center">
         {/* Marca */}
-        <div className="mb-10 flex items-center gap-2 text-zinc-400">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-zinc-900 text-white">
-            <ActivityIcon className="size-4" />
-          </div>
-          <span className="text-sm font-semibold tracking-tight text-zinc-500">
-            Clínica da Aprendizagem
-          </span>
-        </div>
+        <img
+          src="/logo.webp"
+          alt="Clínica da Aprendizagem"
+          className="mb-10 h-auto w-48"
+        />
 
         {/* Ícone do erro */}
-        <div className="mb-6 flex size-16 items-center justify-center rounded-2xl border border-zinc-200 bg-white text-zinc-700 shadow-sm">
+        <div className="mb-6 flex size-16 items-center justify-center rounded-2xl border border-border bg-card text-primary shadow-sm">
           <Icon className="size-8" strokeWidth={1.75} />
         </div>
 
-        <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-zinc-400">
+        <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
           Erro {code}
         </p>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+        <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">
           {title}
         </h1>
-        <p className="mt-3 text-balance text-zinc-500">{description}</p>
+        <p className="mt-3 text-balance text-muted-foreground">{description}</p>
 
         <div className="mt-8 flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-center">
           {actions}

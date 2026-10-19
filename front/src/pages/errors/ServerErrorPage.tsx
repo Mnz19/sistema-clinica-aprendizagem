@@ -31,7 +31,6 @@ export default function ServerErrorPage({ code = "500" }: ServerErrorPageProps) 
             variant="outline"
             size="lg"
             onClick={() => navigate("/")}
-            className="border-zinc-200"
           >
             <HouseIcon />
             Ir para o início
@@ -39,7 +38,6 @@ export default function ServerErrorPage({ code = "500" }: ServerErrorPageProps) 
           <Button
             size="lg"
             onClick={() => window.location.reload()}
-            className="bg-zinc-900 text-white hover:bg-zinc-800"
           >
             <RotateCwIcon />
             Recarregar página

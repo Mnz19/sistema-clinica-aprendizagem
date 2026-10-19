@@ -1,7 +1,7 @@
 import { useState } from "react"
 import type { FormEvent } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { ActivityIcon, Loader2Icon } from "lucide-react"
+import { Loader2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,19 +37,23 @@ export default function Login() {
     }
 
     return (
-        <Card className="w-full max-w-md border-none shadow-2xl">
-            <CardHeader className="items-center space-y-3 text-center">
-                <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 text-white shadow-inner">
-                    <ActivityIcon className="size-6" />
-                </div>
-                <div className="space-y-1">
-                    <CardTitle className="text-2xl font-bold tracking-tight text-zinc-900">
-                        Acesso Restrito
+        <Card className="w-full max-w-md border-none shadow-xl shadow-brand-ink/5">
+            <CardHeader className="items-center space-y-4 text-center">
+                {/* No desktop a logo já aparece no painel da marca (AuthLayout). */}
+                <img
+                    src="/logo.webp"
+                    alt="Clínica da Aprendizagem"
+                    className="mx-auto h-auto w-56 lg:hidden"
+                />
+                <div className="space-y-1.5">
+                    <CardTitle className="font-heading text-3xl font-semibold text-foreground">
+                        Bem-vindo(a)
                     </CardTitle>
-                    <CardDescription className="font-medium text-zinc-500">
-                        Clínica da Aprendizagem
+                    <CardDescription>
+                        Entre com seu e-mail corporativo para acessar o sistema.
                     </CardDescription>
                 </div>
+                <div aria-hidden className="filete-dourado mx-auto h-px w-24" />
             </CardHeader>
 
             <CardContent>
@@ -57,19 +61,19 @@ export default function Login() {
                     {erro && (
                         <div
                             role="alert"
-                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                            className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
                         >
                             {erro}
                         </div>
                     )}
 
                     <div className="space-y-2">
-                        <Label htmlFor="email" className="text-zinc-700">E-mail corporativo</Label>
+                        <Label htmlFor="email">E-mail corporativo</Label>
                         <Input
                             id="email"
                             type="email"
                             placeholder="recepcao@clinicadaaprendizagem.com"
-                            className="bg-zinc-50"
+                            className="h-10"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             disabled={carregando}
@@ -80,8 +84,8 @@ export default function Login() {
 
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="password" className="text-zinc-700">Senha</Label>
-                            <Link to="/esqueci-senha" className="text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900">
+                            <Label htmlFor="password">Senha</Label>
+                            <Link to="/esqueci-senha" className="text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline">
                                 Esqueceu a senha?
                             </Link>
                         </div>
@@ -89,7 +93,7 @@ export default function Login() {
                             id="password"
                             type="password"
                             placeholder="••••••••"
-                            className="bg-zinc-50"
+                            className="h-10"
                             value={senha}
                             onChange={(e) => setSenha(e.target.value)}
                             disabled={carregando}
@@ -101,7 +105,7 @@ export default function Login() {
                     <Button
                         type="submit"
                         disabled={carregando}
-                        className="w-full bg-zinc-900 text-white hover:bg-zinc-800"
+                        className="h-10 w-full"
                     >
                         {carregando ? (
                             <>
@@ -115,8 +119,8 @@ export default function Login() {
                 </form>
             </CardContent>
 
-            <CardFooter className="mt-2 flex justify-center border-t border-zinc-100 pt-4">
-                <p className="text-center text-xs text-zinc-400">
+            <CardFooter className="mt-2 flex justify-center border-t pt-4">
+                <p className="text-center text-xs text-muted-foreground">
                     Ambiente seguro e monitorado.<br/>
                     Acesso exclusivo para colaboradores da clínica.
                 </p>

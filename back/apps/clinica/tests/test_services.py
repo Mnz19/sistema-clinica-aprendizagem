@@ -125,6 +125,7 @@ def test_criar_serie_semanal_4_semanas(agendamento_base, direcao):
     )
     assert len(criados) == 3
     assert len(nao_criados) == 0
+    assert [a.data for a in criados] == [date(2026, 9, 8), date(2026, 9, 15), date(2026, 9, 22)]
     assert Agendamento.objects.count() == 4  # origem + 3 criados
     # Série criada
     assert SerieRecorrente.objects.count() == 1
@@ -136,21 +137,35 @@ def test_criar_serie_semanal_4_semanas(agendamento_base, direcao):
 
 def test_criar_serie_com_conflito_parcial(agendamento_base, direcao, sala, servico, paciente, usuario):
     """Conflito em uma data → cria demais e lista a data não criada."""
-    # Série começa em 09-02 (dia seguinte ao agendamento_base 09-01), vai: 09-02, 09-09, 09-16
-    # Conflito na 2ª data da série (09-09)
+    # Série a partir da origem (ter 09-01): 09-08, 09-15, 09-22 — conflito na 09-15
     Agendamento.objects.create(
         paciente=paciente, profissional=usuario, sala=sala, servico=servico,
-        data=date(2026, 9, 9), horario_inicio=time(10, 0), horario_fim=time(10, 50),
+        data=date(2026, 9, 15), horario_inicio=time(10, 0), horario_fim=time(10, 50),
         status=StatusAgendamento.AGENDADO,
     )
 
     criados, nao_criados = criar_serie(
-        agendamento_base, Frequencia.SEMANAL, date(2026, 9, 20), direcao
+        agendamento_base, Frequencia.SEMANAL, date(2026, 9, 22), direcao
     )
 
     assert len(nao_criados) == 1
-    assert nao_criados[0]["data"] == "2026-09-09"
+    assert nao_criados[0]["data"] == "2026-09-15"
     assert len(criados) == 2
+
+
+@pytest.mark.parametrize(
+    "frequencia, data_fim, esperadas",
+    [
+        (Frequencia.SEMANAL, date(2026, 9, 15), [date(2026, 9, 8), date(2026, 9, 15)]),
+        (Frequencia.QUINZENAL, date(2026, 9, 29), [date(2026, 9, 15), date(2026, 9, 29)]),
+        (Frequencia.MENSAL, date(2026, 11, 1), [date(2026, 10, 1), date(2026, 11, 1)]),
+    ],
+)
+def test_criar_serie_mantem_dia_da_origem(agendamento_base, direcao, frequencia, data_fim, esperadas):
+    """A 1ª ocorrência é um período após a origem (não o dia seguinte): mesmo dia da semana/mês."""
+    criados, _ = criar_serie(agendamento_base, frequencia, data_fim, direcao)
+
+    assert [a.data for a in criados] == esperadas
 
 
 def test_criar_serie_data_fim_anterior_retorna_vazio(agendamento_base, direcao):
