@@ -62,6 +62,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
 import { Avatar } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/useAuth"
+import BotaoRecarregar from "@/features/pwa/components/BotaoRecarregar"
 
 import { PAPEIS_GESTORES } from "@/types/usuario"
 import { PAPEIS_PRONTUARIO, PAPEIS_CONFIG_PRONTUARIO } from "@/types/prontuario"
@@ -364,13 +365,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </span>
             </div>
 
-            {/* Monograma no mobile, onde o menu lateral fica recolhido. */}
-            <img src="/logo-monograma.webp" alt="" aria-hidden className="size-8 md:hidden" />
+            <div className="flex items-center gap-2">
+              <BotaoRecarregar />
+              {/* Monograma no mobile, onde o menu lateral fica recolhido. */}
+              <img src="/logo-monograma.webp" alt="" aria-hidden className="size-8 md:hidden" />
+            </div>
             <div aria-hidden className="filete-dourado absolute inset-x-0 -bottom-px h-px opacity-70" />
           </header>
 
           {/* Page content */}
-          <main className="flex-1 overflow-auto p-4 md:p-6 md:pt-8">
+          <main className="flex-1 overflow-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:p-6 md:pt-8 md:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             <div className="mx-auto w-full max-w-7xl">
               {children}
             </div>

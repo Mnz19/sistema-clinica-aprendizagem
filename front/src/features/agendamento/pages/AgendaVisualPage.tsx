@@ -167,7 +167,7 @@ export default function AgendaVisualPage() {
         : `new-${selectedDate ?? "vazio"}`
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col gap-2 overflow-hidden">
+    <div className="flex h-[calc(100dvh-4rem)] flex-col gap-2 overflow-hidden">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <CalendarDaysIcon className="size-5 shrink-0 text-primary" />
@@ -248,7 +248,7 @@ export default function AgendaVisualPage() {
           slotMinTime="07:30:00"
           slotMaxTime="20:30:00"
           allDaySlot={false}
-          height="calc(100vh - 160px)"
+          height="calc(100dvh - 160px)"
           stickyHeaderDates
           nowIndicator
           selectable

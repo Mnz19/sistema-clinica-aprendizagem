@@ -148,6 +148,8 @@
     }
   body {
     @apply bg-background text-foreground antialiased;
+    /* Toque com cara de app: sem o flash cinza do WebView ao tocar em botões. */
+    -webkit-tap-highlight-color: transparent;
     }
   html {
     @apply font-sans;
