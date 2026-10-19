@@ -355,28 +355,56 @@ class UsuarioAdminSerializer(serializers.ModelSerializer):
         return instance
 
 
-class ResetSenhaSolicitarSerializer(serializers.Serializer):
+def _usuario_do_token(uid, token, mensagem_erro, **filtros):
     """
-    (Stub) Solicitação de reset de senha por e-mail.
+    Resolve o usuário de um par uid/token (convite ou redefinição de senha).
 
-    Base para o fluxo futuro: recebe o e-mail e, se existir, dispara o envio do
-    link de redefinição. A implementação completa (geração de token, template de
-    e-mail e endpoint de confirmação) fica para uma próxima etapa.
+    Qualquer falha (uid malformado, usuário inexistente, token inválido ou
+    expirado) vira a mesma mensagem genérica, sem revelar qual etapa falhou.
     """
+    try:
+        pk = force_str(urlsafe_base64_decode(uid))
+        usuario = Usuario.objects.get(pk=pk, **filtros)
+    except (Usuario.DoesNotExist, ValueError, TypeError, OverflowError):
+        raise serializers.ValidationError(mensagem_erro)
+    if not default_token_generator.check_token(usuario, token):
+        raise serializers.ValidationError(mensagem_erro)
+    return usuario
+
+
+class ResetSenhaSolicitarSerializer(serializers.Serializer):
+    """Solicitação de redefinição de senha ("esqueci minha senha")."""
 
     email = serializers.EmailField()
 
 
 class ResetSenhaConfirmarSerializer(serializers.Serializer):
-    """(Stub) Confirmação de reset de senha com token recebido por e-mail."""
+    """Confirma a redefinição: valida uid/token e aplica a nova senha."""
 
     uid = serializers.CharField()
     token = serializers.CharField()
     nova_senha = serializers.CharField(write_only=True)
 
-    def validate_nova_senha(self, value):
-        validate_password(value)
-        return value
+    def validate(self, attrs):
+        # Conta desativada não pode recuperar acesso por este caminho.
+        usuario = _usuario_do_token(
+            attrs["uid"],
+            attrs["token"],
+            "Link de redefinição inválido ou expirado. Solicite um novo.",
+            is_active=True,
+        )
+        validate_password(attrs["nova_senha"], user=usuario)
+        attrs["usuario"] = usuario
+        return attrs
+
+    def save(self, **kwargs):
+        usuario = self.validated_data["usuario"]
+        usuario.set_password(self.validated_data["nova_senha"])
+        usuario.precisa_trocar_senha = False
+        usuario.save(
+            update_fields=["password", "precisa_trocar_senha", "atualizado_em"]
+        )
+        return usuario
 
 
 class PerfilSerializer(serializers.ModelSerializer):
@@ -416,15 +444,9 @@ class ConviteConfirmarSerializer(serializers.Serializer):
     nova_senha = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        try:
-            pk = force_str(urlsafe_base64_decode(attrs["uid"]))
-            usuario = Usuario.objects.get(pk=pk)
-        except (Usuario.DoesNotExist, ValueError, TypeError, OverflowError):
-            raise serializers.ValidationError("Convite inválido ou expirado.")
-
-        if not default_token_generator.check_token(usuario, attrs["token"]):
-            raise serializers.ValidationError("Convite inválido ou expirado.")
-
+        usuario = _usuario_do_token(
+            attrs["uid"], attrs["token"], "Convite inválido ou expirado."
+        )
         validate_password(attrs["nova_senha"], user=usuario)
         attrs["usuario"] = usuario
         return attrs

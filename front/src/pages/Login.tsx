@@ -1,6 +1,6 @@
 import { useState } from "react"
 import type { FormEvent } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { ActivityIcon, Loader2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -81,9 +81,9 @@ export default function Login() {
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             <Label htmlFor="password" className="text-zinc-700">Senha</Label>
-                            <a href="#" className="text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900">
+                            <Link to="/esqueci-senha" className="text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900">
                                 Esqueceu a senha?
-                            </a>
+                            </Link>
                         </div>
                         <Input
                             id="password"

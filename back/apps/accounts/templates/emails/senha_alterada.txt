@@ -1,0 +1,16 @@
+{% autoescape off %}Olá, {{ nome }}.
+
+A senha da sua conta no sistema da {{ marca }} foi alterada com sucesso.
+
+Conta:  {{ email }}
+Quando: {{ quando }}
+
+Se foi você, está tudo certo e não é preciso fazer nada.
+
+Não reconhece esta alteração? Redefina sua senha agora mesmo em
+{{ link }}
+e avise a administração da clínica.
+
+Com carinho,
+Equipe {{ marca }}
+{% endautoescape %}

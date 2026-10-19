@@ -32,13 +32,7 @@ STORAGES["staticfiles"]["BACKEND"] = (
     "whitenoise.storage.CompressedManifestStaticFilesStorage"
 )
 
-# E-mail real deve ser configurado por variáveis de ambiente (SMTP).
-EMAIL_BACKEND = env(
-    "EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
-)
-EMAIL_HOST = env("EMAIL_HOST", default="")
-EMAIL_PORT = env.int("EMAIL_PORT", default=587)
-EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
-EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="nao-responder@clinica.local")
+# E-mail: em produção sempre pelo Resend (nunca o console). Se a RESEND_API_KEY
+# faltar, o envio falha com ImproperlyConfigured em vez de "sumir" no stdout —
+# sem derrubar o boot (o collectstatic do build roda sem segredos).
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="config.email_backend.ResendEmailBackend")

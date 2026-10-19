@@ -1,0 +1,14 @@
+{% autoescape off %}Olá, {{ nome }}.
+
+Recebemos um pedido para redefinir a senha da sua conta no sistema da {{ marca }}.
+
+Para escolher uma nova senha, acesse:
+
+{{ link }}
+
+Não foi você? Pode ignorar este e-mail — sua senha atual continua valendo.
+O link funciona uma única vez e expira em {{ validade_horas }} horas.
+
+Com carinho,
+Equipe {{ marca }}
+{% endautoescape %}

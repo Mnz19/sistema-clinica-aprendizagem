@@ -1,0 +1,23 @@
+{# Botão de ação + link reserva. Contexto: link, rotulo_botao. #}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 24px;">
+  <tr>
+    <td align="center" bgcolor="#18181b" style="border-radius:10px; background-color:#18181b;">
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{ link }}" style="height:48px; v-text-anchor:middle; width:240px;" arcsize="20%" stroke="f" fillcolor="#18181b">
+        <center style="color:#ffffff; font-family:Arial, sans-serif; font-size:15px; font-weight:bold;">{{ rotulo_botao }}</center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-->
+      <a href="{{ link }}" target="_blank" style="display:inline-block; padding:14px 28px; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:15px; font-weight:600; line-height:20px; color:#ffffff; text-decoration:none; border-radius:10px; background-color:#18181b;">
+        {{ rotulo_botao }} &rarr;
+      </a>
+      <!--<![endif]-->
+    </td>
+  </tr>
+</table>
+<p style="margin:0 0 6px; font-size:13px; line-height:20px; color:#71717a;">
+  Se o botão não funcionar, copie e cole este endereço no navegador:
+</p>
+<p style="margin:0; padding:12px 14px; font-size:12px; line-height:18px; word-break:break-all; background-color:#f4f4f5; border-radius:8px; color:#3f3f46;">
+  <a href="{{ link }}" target="_blank" style="color:#0f766e; text-decoration:underline;">{{ link }}</a>
+</p>

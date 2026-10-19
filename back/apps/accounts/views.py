@@ -7,24 +7,35 @@ Endpoints:
   - LogoutView           → POST /api/auth/logout/           (blacklist do refresh token)
   - MeView               → GET  /api/auth/me/               (dados do usuário logado)
   - TrocaSenhaView       → POST /api/auth/change-password/  (troca de senha)
-  - Reset de senha       → POST /api/auth/password-reset/…  (stub para etapa futura)
+  - Reset de senha       → POST /api/auth/password-reset/ e …/confirm/ ("esqueci a senha")
   - UsuarioViewSet       → /api/usuarios/                   (CRUD p/ DIREÇÃO e SUPERVISÃO)
 """
+import logging
+
 import django_filters
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import AuthenticationFailed, ValidationError
+from rest_framework.exceptions import APIException, AuthenticationFailed, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.token_blacklist.models import (
+    BlacklistedToken,
+    OutstandingToken,
+)
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.accounts.emails import enviar_convite
+from apps.accounts.emails import (
+    enviar_aviso_senha_alterada,
+    enviar_convite,
+    enviar_redefinicao_senha,
+)
 from apps.accounts.models import Especialidade, LogAcesso, Papel
 from apps.accounts.permissions import IsSupervisao, IsRecepcao
 from apps.accounts.serializers import (
@@ -41,6 +52,32 @@ from apps.accounts.serializers import (
 from apps.accounts.utils import get_client_ip
 
 Usuario = get_user_model()
+logger = logging.getLogger(__name__)
+
+
+class EnvioEmailIndisponivel(APIException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = (
+        "Não foi possível enviar o e-mail agora. Tente novamente em instantes."
+    )
+    default_code = "envio_email_indisponivel"
+
+
+def _avisar_senha_alterada(usuario):
+    """
+    Envia o aviso de segurança sem falhar a requisição: a senha já foi trocada,
+    então um problema no provedor de e-mail não deve virar erro para o usuário.
+    """
+    try:
+        enviar_aviso_senha_alterada(usuario)
+    except Exception:
+        logger.exception("Falha ao enviar aviso de senha alterada (usuário %s).", usuario.pk)
+
+
+def _encerrar_sessoes(usuario):
+    """Invalida todos os refresh tokens do usuário (logout em todos os dispositivos)."""
+    for token in OutstandingToken.objects.filter(user=usuario):
+        BlacklistedToken.objects.get_or_create(token=token)
 
 
 class UsuarioFilter(django_filters.FilterSet):
@@ -162,26 +199,39 @@ class TrocaSenhaView(APIView):
             data=request.data, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        usuario = serializer.save()
+        _avisar_senha_alterada(usuario)
         return Response({"detail": "Senha alterada com sucesso."})
 
 
 class ResetSenhaSolicitarView(APIView):
     """
-    (Stub) Solicita o reset de senha por e-mail.
+    "Esqueci minha senha": envia o link de redefinição para o e-mail informado.
 
-    Sempre responde 200 para não revelar se o e-mail existe (boa prática de
-    segurança). O envio real do e-mail será implementado em etapa futura.
+    Sempre responde 200 com a mesma mensagem — exista ou não a conta, e mesmo se
+    o envio falhar — para não revelar quais e-mails estão cadastrados. Limitado
+    por IP (escopo ``password_reset``) para evitar abuso/spam.
     """
 
     permission_classes = []
     authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "password_reset"
 
     @extend_schema(request=ResetSenhaSolicitarSerializer, responses={200: None})
     def post(self, request):
         serializer = ResetSenhaSolicitarSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        # TODO: gerar token, montar link e enviar e-mail de redefinição.
+        usuario = Usuario.objects.filter(
+            email__iexact=serializer.validated_data["email"], is_active=True
+        ).first()
+        if usuario:
+            try:
+                enviar_redefinicao_senha(usuario)
+            except Exception:
+                logger.exception(
+                    "Falha ao enviar e-mail de redefinição (usuário %s).", usuario.pk
+                )
         return Response(
             {
                 "detail": (
@@ -193,7 +243,12 @@ class ResetSenhaSolicitarView(APIView):
 
 
 class ResetSenhaConfirmarView(APIView):
-    """(Stub) Confirma o reset de senha com o token recebido por e-mail."""
+    """
+    Confirma a redefinição com o ``uid``/``token`` do link e define a nova senha.
+
+    Ao concluir, encerra as sessões abertas (blacklist dos refresh tokens) e envia
+    o aviso de senha alterada.
+    """
 
     permission_classes = []
     authentication_classes = []
@@ -202,10 +257,11 @@ class ResetSenhaConfirmarView(APIView):
     def post(self, request):
         serializer = ResetSenhaConfirmarSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        # TODO: validar uid/token e aplicar a nova senha.
+        usuario = serializer.save()
+        _encerrar_sessoes(usuario)
+        _avisar_senha_alterada(usuario)
         return Response(
-            {"detail": "Fluxo de confirmação ainda não implementado."},
-            status=status.HTTP_501_NOT_IMPLEMENTED,
+            {"detail": "Senha redefinida com sucesso. Você já pode entrar."}
         )
 
 
@@ -267,15 +323,27 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         usuario = serializer.save()
         # Se o cadastro foi no modo convite, dispara o e-mail com o link.
         if getattr(serializer, "_enviar_convite", False):
-            enviar_convite(usuario)
+            self._disparar_convite(usuario)
 
     @extend_schema(request=None, responses={200: None})
     @action(detail=True, methods=["post"], url_path="enviar-convite")
     def enviar_convite(self, request, pk=None):
         """(Re)envia o convite de acesso por e-mail ao usuário."""
         usuario = self.get_object()
-        enviar_convite(usuario)
+        self._disparar_convite(usuario)
         return Response({"detail": f"Convite enviado para {usuario.email}."})
+
+    @staticmethod
+    def _disparar_convite(usuario):
+        """Envia o convite; se o provedor falhar, responde 503 com mensagem clara."""
+        try:
+            enviar_convite(usuario)
+        except Exception as exc:
+            logger.exception("Falha ao enviar convite (usuário %s).", usuario.pk)
+            raise EnvioEmailIndisponivel(
+                "O usuário foi salvo, mas o e-mail de convite não pôde ser enviado. "
+                "Edite o usuário e use “Reenviar convite por e-mail” em instantes."
+            ) from exc
 
     def perform_update(self, serializer):
         # Impede que o usuário desative a própria conta pela edição.

@@ -1,7 +1,8 @@
 /**
  * Serviço de autenticação: chamadas à API de contas do backend.
  *
- * Endpoints: `POST /auth/login/`, `POST /auth/logout/`, `GET /auth/me/`.
+ * Endpoints: `POST /auth/login/`, `POST /auth/logout/`, `GET /auth/me/`,
+ * `POST /auth/password-reset/` e `POST /auth/password-reset/confirm/`.
  */
 import { api } from "@/services/api"
 import type { LoginCredentials, LoginResponse, Usuario } from "@/types/auth"
@@ -60,4 +61,18 @@ export async function confirmarConvite(input: {
   nova_senha: string
 }): Promise<void> {
   await api.post("/auth/convite/confirmar/", input)
+}
+
+/** "Esqueci minha senha": pede o link de redefinição (endpoint público). */
+export async function solicitarRedefinicaoSenha(email: string): Promise<void> {
+  await api.post("/auth/password-reset/", { email })
+}
+
+/** Define a nova senha a partir do uid/token do link recebido por e-mail. */
+export async function redefinirSenha(input: {
+  uid: string
+  token: string
+  nova_senha: string
+}): Promise<void> {
+  await api.post("/auth/password-reset/confirm/", input)
 }

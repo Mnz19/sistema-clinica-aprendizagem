@@ -27,5 +27,8 @@ google-auth-oauthlib==1.4.0
 google-api-python-client==2.199.0
 # Criptografia dos refresh tokens do Google guardados no banco (Fernet).
 cryptography==46.0.7
+# Envio de e-mails transacionais (convite, redefinição de senha) pela API do
+# Resend — ver config/email_backend.py.
+resend==2.50.0
 # Geração das planilhas .xlsx da aba de Relatórios (exportação com filtros).
 openpyxl==3.1.5

@@ -1,0 +1,16 @@
+{% autoescape off %}Boas-vindas, {{ nome }}!
+
+Você foi convidado(a) para acessar o sistema da {{ marca }}.
+
+Para ativar sua conta, crie uma senha pelo link abaixo:
+
+{{ link }}
+
+Seu login será este endereço de e-mail. O link funciona uma única vez — se ele
+expirar, peça um novo convite à administração da clínica.
+
+Se você não esperava este convite, ignore este e-mail.
+
+Com carinho,
+Equipe {{ marca }}
+{% endautoescape %}

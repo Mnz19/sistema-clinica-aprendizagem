@@ -1,0 +1,29 @@
+{% extends "emails/base.html" %}
+
+{% block titulo_pagina %}Redefinição de senha — {{ marca }}{% endblock %}
+{% block preheader %}Recebemos um pedido para redefinir sua senha. O link é válido por tempo limitado.{% endblock %}
+{% block rotulo %}Redefinição de senha{% endblock %}
+{% block titulo %}Vamos criar uma nova senha?{% endblock %}
+
+{% block conteudo %}
+<p style="margin:0 0 16px; font-size:15px; line-height:24px;">
+  Olá, {{ nome }}. Recebemos um pedido para redefinir a senha da sua conta no
+  sistema da <strong style="color:#18181b;">{{ marca }}</strong>.
+</p>
+<p style="margin:0; font-size:15px; line-height:24px;">
+  Clique no botão abaixo para escolher uma nova senha:
+</p>
+
+{% include "emails/_botao.html" with rotulo_botao="Redefinir minha senha" %}
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
+  <tr>
+    <td style="padding:14px 16px; background-color:#fffbeb; border:1px solid #fde68a; border-radius:10px; font-size:13px; line-height:20px; color:#92400e;">
+      <strong>Não foi você?</strong> Pode ignorar este e-mail — sua senha atual continua
+      valendo. O link funciona uma única vez e expira em {{ validade_horas }} horas.
+    </td>
+  </tr>
+</table>
+{% endblock %}
+
+{% block motivo %}Você recebeu este e-mail porque alguém pediu a redefinição de senha da sua conta na {{ marca }}.{% endblock %}

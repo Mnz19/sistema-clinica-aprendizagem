@@ -224,6 +224,8 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "user": env("THROTTLE_USER", default="10000/day"),
         "anon": env("THROTTLE_ANON", default="100/hour"),
+        # "Esqueci a senha" (por IP): evita spam de e-mails de redefinição.
+        "password_reset": env("THROTTLE_PASSWORD_RESET", default="5/hour"),
     },
 }
 
@@ -246,20 +248,24 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 
 # --- E-mail ------------------------------------------------------------------
-# Em dev, o padrão imprime o e-mail no console (sem SMTP). Em produção, defina
-# EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend e as credenciais.
+# Envio pela API HTTP do Resend (config/email_backend.py). Sem RESEND_API_KEY, o
+# padrão imprime o e-mail no console — útil em dev e em ambientes sem chave.
+# O domínio do remetente precisa estar verificado no painel do Resend.
+RESEND_API_KEY = env("RESEND_API_KEY", default="")
 EMAIL_BACKEND = env(
-    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
+    "EMAIL_BACKEND",
+    default=(
+        "config.email_backend.ResendEmailBackend"
+        if RESEND_API_KEY
+        else "django.core.mail.backends.console.EmailBackend"
+    ),
 )
-EMAIL_HOST = env("EMAIL_HOST", default="")
-EMAIL_PORT = env.int("EMAIL_PORT", default=587)
-EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
-EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = env(
     "DEFAULT_FROM_EMAIL",
-    default="Clínica da Aprendizagem <nao-responder@clinicadaaprendizagem.com>",
+    default="Clínica da Aprendizagem <no-reply@clinicadaaprendizagem.com.br>",
 )
+# Nome exibido no cabeçalho/rodapé dos templates de e-mail.
+EMAIL_MARCA_NOME = env("EMAIL_MARCA_NOME", default="Clínica da Aprendizagem")
 
 # URL base do frontend, usada em links de e-mail (convite, redefinição de senha).
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5173")

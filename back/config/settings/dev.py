@@ -14,5 +14,8 @@ ALLOWED_HOSTS = ["*"]
 # Em dev, liberar CORS facilita o desenvolvimento do frontend local.
 CORS_ALLOW_ALL_ORIGINS = env("CORS_ALLOW_ALL_ORIGINS", default=True)
 
-# E-mails são apenas impressos no console durante o desenvolvimento.
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# E-mails são impressos no console durante o desenvolvimento. Para testar o envio
+# real pelo Resend, defina EMAIL_BACKEND=config.email_backend.ResendEmailBackend.
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
+)

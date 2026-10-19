@@ -43,6 +43,8 @@ import ConfiguracaoProntuarioPage from "@/features/prontuario/pages/Configuracao
 import PerfilPage from "@/features/perfil/pages/PerfilPage"
 import TrocarSenhaObrigatoriaPage from "@/features/perfil/pages/TrocarSenhaObrigatoriaPage"
 import ConvitePage from "@/features/perfil/pages/ConvitePage"
+import EsqueciSenhaPage from "@/features/perfil/pages/EsqueciSenhaPage"
+import RedefinirSenhaPage from "@/features/perfil/pages/RedefinirSenhaPage"
 import DashboardPage from "@/features/dashboard/pages/DashboardPage"
 import LogsPage from "@/features/logs/pages/LogsPage"
 import NotFoundPage from "@/pages/errors/NotFoundPage"
@@ -76,6 +78,26 @@ const router = createBrowserRouter([
               <Login />
             </AuthLayout>
           </PublicOnlyRoute>
+        ),
+      },
+      {
+        path: "/esqueci-senha",
+        element: (
+          <PublicOnlyRoute>
+            <AuthLayout>
+              <EsqueciSenhaPage />
+            </AuthLayout>
+          </PublicOnlyRoute>
+        ),
+      },
+      {
+        // Redefinição de senha (público, via link de e-mail). Sem PublicOnlyRoute:
+        // o link precisa funcionar mesmo com uma sessão aberta no navegador.
+        path: "/redefinir-senha",
+        element: (
+          <AuthLayout>
+            <RedefinirSenhaPage />
+          </AuthLayout>
         ),
       },
       {
