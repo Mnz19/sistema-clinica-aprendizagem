@@ -36,3 +36,25 @@ STORAGES["staticfiles"]["BACKEND"] = (
 # faltar, o envio falha com ImproperlyConfigured em vez de "sumir" no stdout —
 # sem derrubar o boot (o collectstatic do build roda sem segredos).
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="config.email_backend.ResendEmailBackend")
+
+# --- Logs --------------------------------------------------------------------
+# Sem isto, com DEBUG=False o Django manda o traceback dos 500 só para
+# mail_admins e ele some. Vai tudo para o stderr do container (docker logs →
+# Alloy → Grafana Cloud, monitoramento da VPS). django.request só em ERROR: os
+# 4xx já estão no access log do Traefik. A linha começa pela data — o Alloy
+# junta o traceback a ela.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "padrao": {"format": "{asctime} {levelname} {name}: {message}", "style": "{"},
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "padrao"},
+    },
+    "root": {"handlers": ["console"], "level": "WARNING"},
+    "loggers": {
+        "django": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+    },
+}
