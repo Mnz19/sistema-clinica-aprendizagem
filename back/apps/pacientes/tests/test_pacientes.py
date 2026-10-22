@@ -121,6 +121,28 @@ def test_delete_e_logico(cliente, direcao, cria_paciente):
     assert paciente.id not in ids
 
 
+def test_filtra_inativos_e_reativa(cliente, direcao, cria_paciente):
+    ativo = cria_paciente(nome="Paciente Ativo")
+    inativo = cria_paciente(nome="Paciente Inativo")
+    inativo.ativo = False
+    inativo.save(update_fields=["ativo"])
+    api = cliente(direcao)
+
+    # ?ativo=false lista apenas os desativados.
+    lista = api.get(reverse("paciente-list"), {"ativo": "false"})
+    ids = [p["id"] for p in lista.data]
+    assert ids == [inativo.id]
+    assert ativo.id not in ids
+
+    # Reativação via PATCH devolve o paciente à listagem padrão.
+    resp = api.patch(
+        reverse("paciente-detail", args=[inativo.id]), {"ativo": True}, format="json"
+    )
+    assert resp.status_code == 200, resp.data
+    lista = api.get(reverse("paciente-list"))
+    assert inativo.id in [p["id"] for p in lista.data]
+
+
 # --- Controle de acesso por papel -------------------------------------------
 
 def test_profissional_ve_apenas_seus_pacientes(cliente, prof_a, prof_b, cria_paciente):
