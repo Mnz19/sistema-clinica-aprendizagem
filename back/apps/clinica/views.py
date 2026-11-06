@@ -27,7 +27,7 @@ from apps.accounts.models import Papel
 from apps.accounts.permissions import IsSuperAdmin, tem_papel
 from apps.auditoria.serializers import LogEntrySerializer
 from apps.clinica.models import StatusAgendamento as SA
-from apps.clinica.filters import ProducaoFilter
+from apps.clinica.filters import AgendamentoFilter, ProducaoFilter
 from apps.clinica.models import (
     Agendamento,
     AusenciaProfissional,
@@ -178,14 +178,14 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
     PROFISSIONAL: acessa apenas os próprios agendamentos.
     RECEPCAO / DIRECAO: acessa todos.
 
-    Filtros disponíveis para visualização em calendário: ``data``, ``profissional``,
-    ``sala``, ``paciente`` e ``status``. O ``horario_fim`` é calculado e validado
+    Filtros disponíveis para visualização em calendário: ``data``, ``data__gte``,
+    ``data__lte``, ``profissional``, ``sala``, ``paciente`` e ``status``. O ``horario_fim`` é calculado e validado
     pelo ``AgendamentoSerializer`` antes de salvar.
     """
 
     serializer_class = AgendamentoSerializer
     permission_classes = [IsAuthenticated]
-    filterset_fields = ["data", "profissional", "sala", "paciente", "status"]
+    filterset_class = AgendamentoFilter
     ordering_fields = ["data", "horario_inicio", "criado_em", "atualizado_em"]
     ordering = ["data", "horario_inicio"]
 

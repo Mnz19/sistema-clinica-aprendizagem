@@ -468,3 +468,30 @@ def test_profissional_dono_nao_exclui_proprio_agendamento(api, prof_a, ag_prof_a
 
     assert resp.status_code == 403
     assert Agendamento.objects.filter(id=ag_prof_a.id).exists()
+
+
+# ---------------------------------------------------------------------------
+# Filtro por intervalo de datas (período personalizado na listagem)
+# ---------------------------------------------------------------------------
+
+def test_filtro_intervalo_de_datas_inclui_limites(api, direcao, ag_prof_a, ag_prof_b):
+    """``data__gte``/``data__lte`` recortam a lista e incluem as datas-limite."""
+    resp = api(direcao).get(
+        reverse("agendamento-list"), {"data__gte": "2026-10-01", "data__lte": "2026-10-01"}
+    )
+    assert resp.status_code == 200
+    ids = [a["id"] for a in resp.data]
+    assert ids == [ag_prof_a.id]
+
+
+def test_filtro_intervalo_de_datas_aberto_em_um_lado(api, direcao, ag_prof_a, ag_prof_b):
+    """Só ``data__gte`` devolve tudo a partir da data informada."""
+    resp = api(direcao).get(reverse("agendamento-list"), {"data__gte": "2026-10-02"})
+    assert resp.status_code == 200
+    ids = [a["id"] for a in resp.data]
+    assert ids == [ag_prof_b.id]
+
+
+def test_filtro_intervalo_de_datas_invalido_retorna_400(api, direcao, ag_prof_a):
+    resp = api(direcao).get(reverse("agendamento-list"), {"data__gte": "nao-e-data"})
+    assert resp.status_code == 400

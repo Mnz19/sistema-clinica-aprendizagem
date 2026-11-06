@@ -43,6 +43,10 @@ interface AgendamentoApi {
 
 export interface ListarAgendamentosParams {
   data?: string
+  /** Início do intervalo (inclusivo, YYYY-MM-DD). */
+  data__gte?: string
+  /** Fim do intervalo (inclusivo, YYYY-MM-DD). */
+  data__lte?: string
   profissional?: number
   sala?: number
   paciente?: number
@@ -180,6 +184,8 @@ export async function listarAgendamentos(
   const { data } = await api.get<AgendamentoApi[]>("/agendamentos/", {
     params: {
       data: params.data,
+      data__gte: params.data__gte,
+      data__lte: params.data__lte,
       profissional: params.profissional,
       sala: params.sala,
       paciente: params.paciente,

@@ -1,4 +1,4 @@
-/** Página de listagem de agendamentos (dia / semana / data personalizada). */
+/** Página de listagem de agendamentos (dia / semana / período personalizado). */
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { CalendarCheckIcon, PlusIcon, SearchIcon } from "lucide-react"
@@ -24,7 +24,12 @@ import { ehSuperAdmin } from "@/types/auth"
 import { Select } from "@/components/ui/select"
 import { STATUS_AGENDAMENTO, type Agendamento, type StatusAgendamento } from "@/types/agendamento"
 
-type PeriodoVisualizacao = "hoje" | "semana" | "data"
+type PeriodoVisualizacao = "hoje" | "semana" | "personalizado"
+
+interface IntervaloDatas {
+  inicio: string
+  fim: string
+}
 
 interface StatusModalState {
   agendamento: Agendamento
@@ -69,10 +74,17 @@ function statusVariant(
   }
 }
 
-function paramsBusca(periodo: PeriodoVisualizacao, hoje: string, dataPersonalizada: string) {
+function paramsBusca(periodo: PeriodoVisualizacao, hoje: string, intervalo: IntervaloDatas) {
   if (periodo === "hoje") return { data: hoje, ordering: "horario_inicio" }
-  if (periodo === "data") return { data: dataPersonalizada, ordering: "horario_inicio" }
+  if (periodo === "personalizado") {
+    return { data__gte: intervalo.inicio, data__lte: intervalo.fim, ordering: "data,horario_inicio" }
+  }
   return { ordering: "data,horario_inicio" }
+}
+
+/** Intervalo é válido quando as duas datas existem e o fim não vem antes do início. */
+function intervaloValido({ inicio, fim }: IntervaloDatas): boolean {
+  return Boolean(inicio && fim) && inicio <= fim
 }
 
 export default function AgendamentosListPage() {
@@ -87,7 +99,10 @@ export default function AgendamentosListPage() {
   const podeExcluir = ehSuperAdmin(user)
 
   const [periodo, setPeriodo] = useState<PeriodoVisualizacao>("semana")
-  const [dataPersonalizada, setDataPersonalizada] = useState(() => dataLocalISO())
+  const [intervalo, setIntervalo] = useState<IntervaloDatas>(() => ({
+    inicio: inicioSemanaISO(),
+    fim: fimSemanaISO(),
+  }))
   const [termoBusca, setTermoBusca] = useState("")
   const [filtroStatus, setFiltroStatus] = useState<StatusAgendamento | "">("")
   const [carregando, setCarregando] = useState(true)
@@ -107,8 +122,9 @@ export default function AgendamentosListPage() {
   const fimSemana = fimSemanaISO()
 
   const refetch = useCallback(async () => {
-    await buscarAgendamentos(paramsBusca(periodo, hoje, dataPersonalizada))
-  }, [buscarAgendamentos, periodo, hoje, dataPersonalizada])
+    if (periodo === "personalizado" && !intervaloValido(intervalo)) return
+    await buscarAgendamentos(paramsBusca(periodo, hoje, intervalo))
+  }, [buscarAgendamentos, periodo, hoje, intervalo])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -122,11 +138,12 @@ export default function AgendamentosListPage() {
     if (periodo === "hoje") {
       return agendamentos.filter((a) => a.data === hoje)
     }
-    if (periodo === "data") {
-      return agendamentos.filter((a) => a.data === dataPersonalizada)
+    if (periodo === "personalizado") {
+      if (!intervaloValido(intervalo)) return []
+      return agendamentos.filter((a) => a.data >= intervalo.inicio && a.data <= intervalo.fim)
     }
     return agendamentos.filter((a) => a.data >= inicioSemana && a.data <= fimSemana)
-  }, [agendamentos, periodo, hoje, dataPersonalizada, inicioSemana, fimSemana])
+  }, [agendamentos, periodo, hoje, intervalo, inicioSemana, fimSemana])
 
   const agendamentosFiltrados = useMemo(() => {
     const termo = termoBusca.trim().toLowerCase()
@@ -156,14 +173,16 @@ export default function AgendamentosListPage() {
   const tituloPeriodo =
     periodo === "hoje"
       ? `Hoje (${formatarData(hoje)})`
-      : periodo === "data"
-        ? `Data (${formatarData(dataPersonalizada)})`
+      : periodo === "personalizado"
+        ? intervaloValido(intervalo)
+          ? `Período (${formatarData(intervalo.inicio)} – ${formatarData(intervalo.fim)})`
+          : "Período personalizado"
         : `Esta semana (${formatarData(inicioSemana)} – ${formatarData(fimSemana)})`
 
-  function selecionarDataPersonalizada(valor: string) {
-    if (!valor) return
-    setDataPersonalizada(valor)
-    setPeriodo("data")
+  const intervaloInvalido = periodo === "personalizado" && !intervaloValido(intervalo)
+
+  function atualizarIntervalo(campo: keyof IntervaloDatas, valor: string) {
+    setIntervalo((atual) => ({ ...atual, [campo]: valor }))
   }
 
   const fecharDrawer = useCallback(() => {
@@ -228,7 +247,7 @@ export default function AgendamentosListPage() {
     }
   }
 
-  async function aoSalvarDrawer(_agendamento: Agendamento) {
+  async function aoSalvarDrawer() {
     await refetch()
     fecharDrawer()
   }
@@ -260,8 +279,9 @@ export default function AgendamentosListPage() {
     }
   }
 
-  const mensagemVazia =
-    termoBusca.trim() && agendamentosPorPeriodo.length > 0
+  const mensagemVazia = intervaloInvalido
+    ? "Informe a data inicial e a data final (a final não pode ser anterior à inicial)."
+    : termoBusca.trim() && agendamentosPorPeriodo.length > 0
       ? "Nenhum agendamento encontrado para a busca."
       : "Nenhum agendamento encontrado para o período selecionado." +
         (!filtroStatus ? " (agendamentos desmarcados estão ocultos)" : "")
@@ -297,14 +317,35 @@ export default function AgendamentosListPage() {
         >
           Esta semana
         </Button>
-        <Input
-          type="date"
-          aria-label="Data personalizada"
-          value={dataPersonalizada}
-          onClick={() => setPeriodo("data")}
-          onChange={(e) => selecionarDataPersonalizada(e.target.value)}
-          className={`h-8 w-40 text-sm ${periodo === "data" ? "border-primary ring-1 ring-primary" : ""}`}
-        />
+        <Button
+          type="button"
+          size="sm"
+          variant={periodo === "personalizado" ? "default" : "outline"}
+          onClick={() => setPeriodo("personalizado")}
+        >
+          Personalizado
+        </Button>
+        {periodo === "personalizado" && (
+          <div className="flex items-center gap-1.5">
+            <Input
+              type="date"
+              aria-label="Data inicial"
+              value={intervalo.inicio}
+              max={intervalo.fim || undefined}
+              onChange={(e) => atualizarIntervalo("inicio", e.target.value)}
+              className="h-8 w-36 text-sm"
+            />
+            <span className="text-sm text-muted-foreground">até</span>
+            <Input
+              type="date"
+              aria-label="Data final"
+              value={intervalo.fim}
+              min={intervalo.inicio || undefined}
+              onChange={(e) => atualizarIntervalo("fim", e.target.value)}
+              className="h-8 w-36 text-sm"
+            />
+          </div>
+        )}
 
         <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
           <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
