@@ -1,4 +1,4 @@
-/** Página de listagem de agendamentos (dia / semana). */
+/** Página de listagem de agendamentos (dia / semana / data personalizada). */
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { CalendarCheckIcon, PlusIcon, SearchIcon } from "lucide-react"
@@ -24,7 +24,7 @@ import { ehSuperAdmin } from "@/types/auth"
 import { Select } from "@/components/ui/select"
 import { STATUS_AGENDAMENTO, type Agendamento, type StatusAgendamento } from "@/types/agendamento"
 
-type PeriodoVisualizacao = "hoje" | "semana"
+type PeriodoVisualizacao = "hoje" | "semana" | "data"
 
 interface StatusModalState {
   agendamento: Agendamento
@@ -69,8 +69,10 @@ function statusVariant(
   }
 }
 
-function paramsBusca(periodo: PeriodoVisualizacao, hoje: string) {
-  return periodo === "hoje" ? { data: hoje, ordering: "horario_inicio" } : { ordering: "data,horario_inicio" }
+function paramsBusca(periodo: PeriodoVisualizacao, hoje: string, dataPersonalizada: string) {
+  if (periodo === "hoje") return { data: hoje, ordering: "horario_inicio" }
+  if (periodo === "data") return { data: dataPersonalizada, ordering: "horario_inicio" }
+  return { ordering: "data,horario_inicio" }
 }
 
 export default function AgendamentosListPage() {
@@ -85,6 +87,7 @@ export default function AgendamentosListPage() {
   const podeExcluir = ehSuperAdmin(user)
 
   const [periodo, setPeriodo] = useState<PeriodoVisualizacao>("semana")
+  const [dataPersonalizada, setDataPersonalizada] = useState(() => dataLocalISO())
   const [termoBusca, setTermoBusca] = useState("")
   const [filtroStatus, setFiltroStatus] = useState<StatusAgendamento | "">("")
   const [carregando, setCarregando] = useState(true)
@@ -104,8 +107,8 @@ export default function AgendamentosListPage() {
   const fimSemana = fimSemanaISO()
 
   const refetch = useCallback(async () => {
-    await buscarAgendamentos(paramsBusca(periodo, hoje))
-  }, [buscarAgendamentos, periodo, hoje])
+    await buscarAgendamentos(paramsBusca(periodo, hoje, dataPersonalizada))
+  }, [buscarAgendamentos, periodo, hoje, dataPersonalizada])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -119,8 +122,11 @@ export default function AgendamentosListPage() {
     if (periodo === "hoje") {
       return agendamentos.filter((a) => a.data === hoje)
     }
+    if (periodo === "data") {
+      return agendamentos.filter((a) => a.data === dataPersonalizada)
+    }
     return agendamentos.filter((a) => a.data >= inicioSemana && a.data <= fimSemana)
-  }, [agendamentos, periodo, hoje, inicioSemana, fimSemana])
+  }, [agendamentos, periodo, hoje, dataPersonalizada, inicioSemana, fimSemana])
 
   const agendamentosFiltrados = useMemo(() => {
     const termo = termoBusca.trim().toLowerCase()
@@ -150,7 +156,15 @@ export default function AgendamentosListPage() {
   const tituloPeriodo =
     periodo === "hoje"
       ? `Hoje (${formatarData(hoje)})`
-      : `Esta semana (${formatarData(inicioSemana)} – ${formatarData(fimSemana)})`
+      : periodo === "data"
+        ? `Data (${formatarData(dataPersonalizada)})`
+        : `Esta semana (${formatarData(inicioSemana)} – ${formatarData(fimSemana)})`
+
+  function selecionarDataPersonalizada(valor: string) {
+    if (!valor) return
+    setDataPersonalizada(valor)
+    setPeriodo("data")
+  }
 
   const fecharDrawer = useCallback(() => {
     setIsDrawerOpen(false)
@@ -283,6 +297,14 @@ export default function AgendamentosListPage() {
         >
           Esta semana
         </Button>
+        <Input
+          type="date"
+          aria-label="Data personalizada"
+          value={dataPersonalizada}
+          onClick={() => setPeriodo("data")}
+          onChange={(e) => selecionarDataPersonalizada(e.target.value)}
+          className={`h-8 w-40 text-sm ${periodo === "data" ? "border-primary ring-1 ring-primary" : ""}`}
+        />
 
         <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
           <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

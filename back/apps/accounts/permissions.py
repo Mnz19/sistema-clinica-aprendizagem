@@ -78,6 +78,21 @@ class IsSupervisaoOuRecepcao(TemPapel):
     papeis_permitidos = (Papel.DIRECAO, Papel.SUPERVISAO, Papel.RECEPCAO)
 
 
+class PodeListarEquipe(TemPapel):
+    """
+    Leitura da lista de usuários (equipe) pelos papéis que precisam dela em
+    seletores: DIREÇÃO, SUPERVISÃO, RECEPÇÃO (agendamento) e FINANCEIRO
+    (filtro de profissional em Produção e Relatórios). Não concede escrita.
+    """
+
+    papeis_permitidos = (
+        Papel.DIRECAO,
+        Papel.SUPERVISAO,
+        Papel.RECEPCAO,
+        Papel.FINANCEIRO,
+    )
+
+
 class IsRecepcao(TemPapel):
     """Acesso restrito aos papéis DIREÇÃO e RECEPÇÃO."""
 

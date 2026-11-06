@@ -72,6 +72,18 @@ class TestGestaoUsuarios:
         )
         assert resp.status_code == 403
 
+    def test_financeiro_lista_usuarios_mas_nao_cria(self, api_client, cria_usuario):
+        """FINANCEIRO lista a equipe (filtro de profissional em Produção/Relatórios), sem gerir."""
+        fin = cria_usuario(email="fin@clinica.com", role=Papel.FINANCEIRO)
+        api_client.force_authenticate(user=fin)
+        assert api_client.get(reverse("usuario-list")).status_code == 200
+        resp = api_client.post(
+            reverse("usuario-list"),
+            {"nome": "X", "email": "x@clinica.com", "role": Papel.RECEPCAO, "password": SENHA_PADRAO},
+            format="json",
+        )
+        assert resp.status_code == 403
+
     def test_anonimo_nao_pode_criar_usuario(self, api_client):
         resp = api_client.post(reverse("usuario-list"), {}, format="json")
         assert resp.status_code == 401

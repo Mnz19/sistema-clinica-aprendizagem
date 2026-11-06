@@ -6,6 +6,18 @@
  */
 import type { Papel } from "@/types/auth"
 
+/**
+ * Papéis com acesso ao cadastro de pacientes — espelha `PodeAcessarPacientes`
+ * em `apps/pacientes/permissions.py`. FINANCEIRO fica de fora: enxerga o nome
+ * do paciente em Produção/Relatórios, mas não lista nem abre o cadastro.
+ */
+export const PAPEIS_PACIENTES: Papel[] = [
+  "DIRECAO",
+  "SUPERVISAO",
+  "RECEPCAO",
+  "PROFISSIONAL",
+]
+
 /** Parentesco do responsável (enum `Parentesco` do backend). */
 export const PARENTESCOS = {
   MAE: "Mãe",

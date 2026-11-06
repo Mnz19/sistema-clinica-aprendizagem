@@ -34,7 +34,7 @@ import {
 } from "@/types/relatorio"
 import { listarPacientes } from "@/services/pacientes"
 import { useClinicaStore } from "@/store/clinicaStore"
-import type { PacienteListItem } from "@/types/paciente"
+import { PAPEIS_PACIENTES, type PacienteListItem } from "@/types/paciente"
 
 /** Atraso do debounce da busca, para não disparar uma request por tecla. */
 const DEBOUNCE_MS = 400
@@ -88,16 +88,25 @@ export default function RelatoriosPage() {
   // Não há store de pacientes: a lista enxuta alimenta só o seletor de filtro.
   const [pacientes, setPacientes] = useState<PacienteListItem[]>([])
 
-  const definicaoAtiva = useMemo(
-    () => disponiveis.find((definicao) => definicao.id === ativo) ?? null,
-    [disponiveis, ativo],
-  )
+  // FINANCEIRO não lista pacientes: o filtro sai da tela em vez de aparecer vazio.
+  const podeListarPacientes = temPapel(user, ...PAPEIS_PACIENTES)
+
+  const definicaoAtiva = useMemo(() => {
+    const definicao = disponiveis.find((item) => item.id === ativo)
+    if (!definicao) return null
+    if (podeListarPacientes) return definicao
+    return {
+      ...definicao,
+      filtros: definicao.filtros.filter((campo) => campo !== "paciente"),
+    }
+  }, [disponiveis, ativo, podeListarPacientes])
 
   // Dados dos seletores de filtro — carregados uma vez (os stores fazem cache).
   useEffect(() => {
     void buscarProfissionais()
     void buscarSalas()
     void buscarServicos()
+    if (!podeListarPacientes) return
     listarPacientes()
       .then(setPacientes)
       // O seletor de paciente é um filtro opcional: se falhar, o relatório
@@ -105,7 +114,7 @@ export default function RelatoriosPage() {
       .catch((falha) =>
         console.error("[RelatoriosPage] listarPacientes:", falha),
       )
-  }, [buscarProfissionais, buscarSalas, buscarServicos])
+  }, [buscarProfissionais, buscarSalas, buscarServicos, podeListarPacientes])
 
   // Busca a prévia com debounce, reagindo a troca de aba e de filtros.
   useEffect(() => {

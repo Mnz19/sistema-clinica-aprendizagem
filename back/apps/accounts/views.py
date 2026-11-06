@@ -37,7 +37,7 @@ from apps.accounts.emails import (
     enviar_redefinicao_senha,
 )
 from apps.accounts.models import Especialidade, LogAcesso, Papel
-from apps.accounts.permissions import IsSupervisao, IsSupervisaoOuRecepcao
+from apps.accounts.permissions import IsSupervisao, PodeListarEquipe
 from apps.accounts.serializers import (
     ConviteConfirmarSerializer,
     CustomTokenObtainPairSerializer,
@@ -294,8 +294,9 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     Criação em dois modos: senha inicial (troca obrigatória no 1º acesso) ou
     convite por e-mail. A ação ``enviar-convite`` (re)envia o convite.
     
-    RECEPCAO pode listar usuários (para preencher dropdown de profissionais no
-    agendamento) mas não pode criar, atualizar ou deletar.
+    RECEPCAO e FINANCEIRO podem listar usuários (dropdown de profissionais no
+    agendamento e filtros de Produção/Relatórios) mas não podem criar, atualizar
+    ou deletar.
     """
 
     queryset = (
@@ -310,12 +311,13 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """
-        Leitura (list/retrieve) para DIREÇÃO, SUPERVISÃO e RECEPÇÃO — a recepção
-        precisa do dropdown de profissionais no agendamento. Escrita só para
-        DIREÇÃO/SUPERVISÃO.
+        Leitura (list/retrieve) para DIREÇÃO, SUPERVISÃO, RECEPÇÃO e FINANCEIRO —
+        a recepção precisa do dropdown de profissionais no agendamento e o
+        financeiro, do filtro de profissional em Produção/Relatórios. Escrita
+        só para DIREÇÃO/SUPERVISÃO.
         """
         if self.action in ["list", "retrieve"]:
-            return [IsSupervisaoOuRecepcao()]
+            return [PodeListarEquipe()]
         # Escrita requer SUPERVISAO ou superior
         return [IsSupervisao()]
 
