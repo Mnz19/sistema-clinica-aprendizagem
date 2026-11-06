@@ -39,6 +39,8 @@ interface ItemMenu {
 }
 
 const LARGURA_MENU = 192 // w-48
+const MARGEM_VIEWPORT = 8
+const DISTANCIA_TRIGGER = 4
 
 export function AgendamentoAcoesMenu({
   agendamento,
@@ -48,7 +50,7 @@ export function AgendamentoAcoesMenu({
   onExcluir,
 }: Props) {
   const [aberto, setAberto] = useState(false)
-  const [posicao, setPosicao] = useState({ top: 0, left: 0 })
+  const [posicao, setPosicao] = useState({ top: 0, left: 0, maxHeight: 0 })
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -56,14 +58,30 @@ export function AgendamentoAcoesMenu({
     const rect = triggerRef.current?.getBoundingClientRect()
     if (!rect) return
 
-    const margem = 8
     let left = rect.right - LARGURA_MENU
-    left = Math.max(margem, Math.min(left, window.innerWidth - LARGURA_MENU - margem))
+    left = Math.max(
+      MARGEM_VIEWPORT,
+      Math.min(left, window.innerWidth - LARGURA_MENU - MARGEM_VIEWPORT)
+    )
 
-    setPosicao({
-      top: rect.bottom + margem,
-      left,
-    })
+    // Nas últimas linhas da lista o menu não cabe embaixo: abre para cima.
+    // `scrollHeight` dá a altura do conteúdo mesmo com o `maxHeight` já aplicado.
+    const alturaMenu = menuRef.current?.scrollHeight ?? 0
+    const espacoAbaixo = window.innerHeight - rect.bottom - DISTANCIA_TRIGGER - MARGEM_VIEWPORT
+    const espacoAcima = rect.top - DISTANCIA_TRIGGER - MARGEM_VIEWPORT
+    const abreParaCima = alturaMenu > espacoAbaixo && espacoAcima > espacoAbaixo
+
+    if (abreParaCima) {
+      const maxHeight = espacoAcima
+      setPosicao({
+        top: rect.top - DISTANCIA_TRIGGER - Math.min(alturaMenu, maxHeight),
+        left,
+        maxHeight,
+      })
+      return
+    }
+
+    setPosicao({ top: rect.bottom + DISTANCIA_TRIGGER, left, maxHeight: espacoAbaixo })
   }
 
   useLayoutEffect(() => {
@@ -189,8 +207,13 @@ export function AgendamentoAcoesMenu({
       <div
         ref={menuRef}
         role="menu"
-        style={{ position: "fixed", top: posicao.top, left: posicao.left }}
-        className="z-50 w-48 rounded-md border border-border bg-popover py-1 shadow-lg"
+        style={{
+          position: "fixed",
+          top: posicao.top,
+          left: posicao.left,
+          maxHeight: posicao.maxHeight || undefined,
+        }}
+        className="z-50 w-48 overflow-y-auto rounded-md border border-border bg-popover py-1 shadow-lg"
       >
         {itens.map((item) => {
           const Icone = item.icone
