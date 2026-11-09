@@ -272,14 +272,12 @@ class AgendamentoSerializer(serializers.ModelSerializer):
                     }
                 )
 
-        # --- Validação de transição de status por papel ----------------------------
+        # --- Status é livre ---------------------------------------------------------
+        # Decisão da clínica: qualquer status pode ir para qualquer outro (inclusive
+        # sair de ATENDIDO/FALTA/DESMARCADO), sem trava de ordem nem de papel. O
+        # ledger de produção se reajusta pelo signal
+        # ``sincronizar_producao_com_agendamento``.
         status = attrs.get("status", getattr(instancia, "status", None))
-        status_atual = getattr(instancia, "status", None)
-        if instancia is not None and status_atual and status and status != status_atual:
-            request = self.context.get("request")
-            if request and hasattr(request.user, "papeis_codigos"):
-                from apps.clinica.transitions import validar_transicao
-                validar_transicao(status_atual, status, request.user.papeis_codigos)
 
         # --- Parecer obrigatório para FALTA e DESMARCADO ---------------------------
         parecer_status = attrs.get(

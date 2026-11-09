@@ -45,7 +45,6 @@ from apps.clinica.serializers import (
     SalaSerializer,
     ServicoSerializer,
 )
-from apps.clinica.transitions import validar_transicao
 
 
 class SalaViewSet(viewsets.ModelViewSet):
@@ -431,8 +430,8 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
         POST /api/agendamentos/{id}/iniciar-atendimento/ — inicia o cronômetro.
 
         Marca ``atendimento_iniciado_em`` e move o status para ``EM_ATENDIMENTO``,
-        deixando a sala em uso. Permitido a PROFISSIONAL (do próprio agendamento)
-        e DIRECAO, a partir de AGENDADO, PRE_CONFIRMADO ou CONFIRMADO.
+        deixando a sala em uso. Pode partir de qualquer status (inclusive FALTA,
+        ATENDIDO ou DESMARCADO) — não há validação de transição.
         """
         agendamento = self.get_object()
 
@@ -441,10 +440,6 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
                 {"detail": "O atendimento já foi iniciado."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # Valida a transição para EM_ATENDIMENTO (papel + estado de origem).
-        # Levanta ValidationError (estado terminal) ou PermissionDenied (papel).
-        validar_transicao(agendamento.status, SA.EM_ATENDIMENTO, request.user.papeis_codigos)
 
         # A sala não pode já estar ocupada por outro atendimento em andamento.
         sala_ocupada = (
@@ -497,8 +492,6 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
                 {"detail": "O atendimento já foi finalizado."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        validar_transicao(agendamento.status, SA.ATENDIDO, request.user.papeis_codigos)
 
         agendamento.atendimento_finalizado_em = timezone.now()
         agendamento.status = SA.ATENDIDO

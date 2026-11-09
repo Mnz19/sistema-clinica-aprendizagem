@@ -209,15 +209,40 @@ def test_recepcao_pode_colocar_em_atendimento(api, recepcao, ag_prof_a):
     assert resp.data["status"] == StatusAgendamento.EM_ATENDIMENTO
 
 
-def test_estado_terminal_nao_transita(api, direcao, ag_prof_a):
-    """SCHED-03/AC5: estado terminal ATENDIDO não aceita transição de saída → 400."""
-    ag_prof_a.status = StatusAgendamento.ATENDIDO
+STATUS_FINAIS = (
+    StatusAgendamento.ATENDIDO,
+    StatusAgendamento.FALTA,
+    StatusAgendamento.DESMARCADO,
+)
+
+
+@pytest.mark.parametrize("origem", STATUS_FINAIS)
+@pytest.mark.parametrize("destino", list(StatusAgendamento.values))
+def test_status_final_muda_para_qualquer_status(api, recepcao, ag_prof_a, origem, destino):
+    """Sem validação de transição: ATENDIDO/FALTA/DESMARCADO voltam para qualquer status."""
+    ag_prof_a.status = origem
+    ag_prof_a.parecer_status = "Parecer"
     ag_prof_a.save()
-    resp = api(direcao).patch(
+    resp = api(recepcao).patch(
         reverse("agendamento-detail", args=[ag_prof_a.id]),
-        {"status": StatusAgendamento.AGENDADO}, format="json",
+        {"status": destino, "parecer_status": "Parecer"}, format="json",
     )
-    assert resp.status_code == 400
+    assert resp.status_code == 200, resp.data
+    assert resp.data["status"] == destino
+
+
+def test_falta_para_em_atendimento(api, recepcao, ag_prof_a):
+    """Caso da clínica: paciente marcado como falta chegou → EM_ATENDIMENTO."""
+    ag_prof_a.status = StatusAgendamento.FALTA
+    ag_prof_a.parecer_status = "Não compareceu"
+    ag_prof_a.save()
+    resp = api(recepcao).patch(
+        reverse("agendamento-detail", args=[ag_prof_a.id]),
+        {"status": StatusAgendamento.EM_ATENDIMENTO}, format="json",
+    )
+    assert resp.status_code == 200, resp.data
+    ag_prof_a.refresh_from_db()
+    assert ag_prof_a.status == StatusAgendamento.EM_ATENDIMENTO
 
 
 # ---------------------------------------------------------------------------

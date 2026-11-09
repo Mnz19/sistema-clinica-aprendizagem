@@ -116,3 +116,13 @@ def test_transicao_atendido_para_agendado_remove_producao(cria_agendamento):
     ag.status = StatusAgendamento.AGENDADO
     ag.save()
     assert not Producao.objects.filter(agendamento=ag).exists()
+
+
+def test_transicao_falta_para_em_atendimento_remove_producao(cria_agendamento):
+    """Falta corrigida para EM_ATENDIMENTO não pode manter a produção de falta."""
+    ag = cria_agendamento(StatusAgendamento.FALTA)
+    assert Producao.objects.filter(agendamento=ag, motivo=MOTIVO_FALTA).exists()
+
+    ag.status = StatusAgendamento.EM_ATENDIMENTO
+    ag.save()
+    assert not Producao.objects.filter(agendamento=ag).exists()

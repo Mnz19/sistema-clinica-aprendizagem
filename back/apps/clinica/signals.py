@@ -66,8 +66,8 @@ def sincronizar_producao_com_agendamento(
     - ``FALTA`` → cria/atualiza com motivo "Falta do Paciente".
     - ``DESMARCADO`` com ≤ 8h até o início → cria/atualiza "Cancelamento Tardio (< 8h)".
     - ``DESMARCADO`` com > 8h de antecedência, ou retorno a
-      ``AGENDADO``/``PRE_CONFIRMADO``/``CONFIRMADO`` → remove a produção (se existir),
-      permitindo correção da secretária.
+      ``AGENDADO``/``PRE_CONFIRMADO``/``CONFIRMADO``/``EM_ATENDIMENTO`` → remove a
+      produção (se existir), permitindo correção da secretária.
     """
     status = instance.status
 
@@ -92,5 +92,6 @@ def sincronizar_producao_com_agendamento(
         StatusAgendamento.AGENDADO,
         StatusAgendamento.PRE_CONFIRMADO,
         StatusAgendamento.CONFIRMADO,
+        StatusAgendamento.EM_ATENDIMENTO,
     ):
         _remover_producao(instance)

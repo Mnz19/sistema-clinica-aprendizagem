@@ -164,12 +164,17 @@ def test_iniciar_com_sala_ocupada_retorna_409(
     assert "em uso" in resp.data["detail"]
 
 
-def test_iniciar_estado_terminal_retorna_400(api, prof_a, ag_confirmado):
-    """Não dá para iniciar um agendamento já ATENDIDO (estado terminal)."""
-    ag_confirmado.status = StatusAgendamento.ATENDIDO
+@pytest.mark.parametrize(
+    "origem",
+    [StatusAgendamento.ATENDIDO, StatusAgendamento.FALTA, StatusAgendamento.DESMARCADO],
+)
+def test_iniciar_a_partir_de_status_final(api, prof_a, ag_confirmado, origem):
+    """Sem validação de transição: dá para iniciar a partir de FALTA/ATENDIDO/DESMARCADO."""
+    ag_confirmado.status = origem
     ag_confirmado.save(update_fields=["status"])
     resp = api(prof_a).post(_url(ag_confirmado, "iniciar-atendimento"))
-    assert resp.status_code == 400
+    assert resp.status_code == 200, resp.data
+    assert resp.data["status"] == StatusAgendamento.EM_ATENDIMENTO
 
 
 # ---------------------------------------------------------------------------
